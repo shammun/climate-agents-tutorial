@@ -1,0 +1,12 @@
+# data files are large: keep them out of git
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+*.nc
+*.grib
+# personal Claude Code settings and agent memory that should stay local
+.claude/settings.local.json
+.claude/agent-memory-local/
+CLAUDE.local.md
+__pycache__/

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 598" width="480" height="598" role="img" aria-label="The four building blocks: project rules, agent definitions, skills and permissions"><style>
+.t{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;fill:var(--d-text,#0f172a)}
+.m{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;fill:var(--d-muted,#475569)}
+.c{font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;fill:var(--d-text,#0f172a)}
+.b{font-weight:650}
+.ln{stroke:var(--d-line,#64748b);stroke-width:2;fill:none}
+.acc{stroke:var(--d-acc,#0d9488);stroke-width:2.5;fill:none}
+.f0{fill:var(--d-f0,#ffffff);stroke:var(--d-s0,#cbd5e1);stroke-width:1.5}
+.f1{fill:var(--d-f1,#f0fdfa);stroke:var(--d-s1,#14b8a6);stroke-width:1.5}
+.f2{fill:var(--d-f2,#eff6ff);stroke:var(--d-s2,#60a5fa);stroke-width:1.5}
+.f3{fill:var(--d-f3,#fffbeb);stroke:var(--d-s3,#f59e0b);stroke-width:1.5}
+.f4{fill:var(--d-f4,#f5f3ff);stroke:var(--d-s4,#a78bfa);stroke-width:1.5}
+.f5{fill:var(--d-f5,#fef2f2);stroke:var(--d-s5,#f87171);stroke-width:1.5}
+.f6{fill:var(--d-f6,#f8fafc);stroke:var(--d-s0,#cbd5e1);stroke-width:1.5}
+.code{fill:var(--d-code,#0f172a)}
+.ck{font-family:ui-monospace,Menlo,Consolas,monospace;fill:#7dd3fc}
+.cv{font-family:ui-monospace,Menlo,Consolas,monospace;fill:#fde68a}
+.cd{font-family:ui-monospace,Menlo,Consolas,monospace;fill:#5eead4}
+.cm{font-family:ui-monospace,Menlo,Consolas,monospace;fill:#94a3b8;font-style:italic}
+.cb{font-family:ui-monospace,Menlo,Consolas,monospace;fill:#e2e8f0}
+.ah{fill:var(--d-line,#64748b)}
+.aa{fill:var(--d-acc,#0d9488)}
+</style>
+<defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+<marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="aa"/></marker>
+</defs><rect x="20" y="14" width="440" height="118" rx="14" class="f1"/><text x="40" y="48" class="t b" font-size="18" text-anchor="start">Project rules</text><text x="40" y="74" class="c" font-size="13" text-anchor="start">AGENTS.md · CLAUDE.md · GEMINI.md</text><text x="40" y="98" class="t" font-size="15" text-anchor="start">briefing sheet for the whole project</text><text x="40" y="120" class="m" font-size="14" text-anchor="start">loaded: every session</text><rect x="20" y="146" width="440" height="118" rx="14" class="f2"/><text x="40" y="180" class="t b" font-size="18" text-anchor="start">Agent definitions</text><text x="40" y="206" class="c" font-size="13" text-anchor="start">.claude/agents/*.md · .codex/agents/*.toml</text><text x="40" y="230" class="t" font-size="15" text-anchor="start">one specialist: role, tools, model</text><text x="40" y="252" class="m" font-size="14" text-anchor="start">loaded: when a task is delegated</text><rect x="20" y="278" width="440" height="118" rx="14" class="f4"/><text x="40" y="312" class="t b" font-size="18" text-anchor="start">Skills</text><text x="40" y="338" class="c" font-size="13" text-anchor="start">.claude/skills/&lt;name&gt;/SKILL.md</text><text x="40" y="362" class="t" font-size="15" text-anchor="start">reusable manual + helper scripts</text><text x="40" y="384" class="m" font-size="14" text-anchor="start">loaded: only when needed</text><rect x="20" y="410" width="440" height="118" rx="14" class="f5"/><text x="40" y="444" class="t b" font-size="18" text-anchor="start">Permissions</text><text x="40" y="470" class="c" font-size="13" text-anchor="start">.claude/settings.json</text><text x="40" y="494" class="t" font-size="15" text-anchor="start">hard limits nobody can break</text><text x="40" y="516" class="m" font-size="14" text-anchor="start">applied: always</text><text x="240" y="560" class="m" font-size="14" text-anchor="middle">Same four ideas in every AI coding tool;</text><text x="240" y="582" class="m" font-size="14" text-anchor="middle">only file names and folders differ.</text></svg>

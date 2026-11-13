@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 446" width="480" height="446" role="img" aria-label="Anatomy of an agent file: YAML frontmatter between two --- lines, then the Markdown body"><style>
+.t{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;fill:var(--d-text,#0f172a)}
+.m{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;fill:var(--d-muted,#475569)}
+.c{font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;fill:var(--d-text,#0f172a)}
+.b{font-weight:650}
+.ln{stroke:var(--d-line,#64748b);stroke-width:2;fill:none}
+.acc{stroke:var(--d-acc,#0d9488);stroke-width:2.5;fill:none}
+.f0{fill:var(--d-f0,#ffffff);stroke:var(--d-s0,#cbd5e1);stroke-width:1.5}
+.f1{fill:var(--d-f1,#f0fdfa);stroke:var(--d-s1,#14b8a6);stroke-width:1.5}
+.f2{fill:var(--d-f2,#eff6ff);stroke:var(--d-s2,#60a5fa);stroke-width:1.5}
+.f3{fill:var(--d-f3,#fffbeb);stroke:var(--d-s3,#f59e0b);stroke-width:1.5}
+.f4{fill:var(--d-f4,#f5f3ff);stroke:var(--d-s4,#a78bfa);stroke-width:1.5}
+.f5{fill:var(--d-f5,#fef2f2);stroke:var(--d-s5,#f87171);stroke-width:1.5}
+.f6{fill:var(--d-f6,#f8fafc);stroke:var(--d-s0,#cbd5e1);stroke-width:1.5}
+.code{fill:var(--d-code,#0f172a)}
+.ck{font-family:ui-monospace,Menlo,Consolas,monospace;fill:#7dd3fc}
+.cv{font-family:ui-monospace,Menlo,Consolas,monospace;fill:#fde68a}
+.cd{font-family:ui-monospace,Menlo,Consolas,monospace;fill:#5eead4}
+.cm{font-family:ui-monospace,Menlo,Consolas,monospace;fill:#94a3b8;font-style:italic}
+.cb{font-family:ui-monospace,Menlo,Consolas,monospace;fill:#e2e8f0}
+.ah{fill:var(--d-line,#64748b)}
+.aa{fill:var(--d-acc,#0d9488)}
+</style>
+<defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+<marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="aa"/></marker>
+</defs><rect x="16" y="16" width="300" height="384" rx="12" class="code"/><text x="34" y="46" font-size="14.5" class="cd" xml:space="preserve">---</text><text x="34" y="71" font-size="14.5" xml:space="preserve"><tspan class="ck">name:</tspan><tspan class="cv"> data-qc</tspan></text><text x="34" y="96" font-size="14.5" xml:space="preserve"><tspan class="ck">description:</tspan><tspan class="cv"> Checks NetCDF</tspan></text><text x="34" y="121" font-size="14.5" class="cm" xml:space="preserve">  (all on one line)</text><text x="34" y="146" font-size="14.5" xml:space="preserve"><tspan class="ck">tools:</tspan><tspan class="cv"> Read, Grep, Bash</tspan></text><text x="34" y="171" font-size="14.5" xml:space="preserve"><tspan class="ck">model:</tspan><tspan class="cv"> sonnet</tspan></text><text x="34" y="196" font-size="14.5" class="cd" xml:space="preserve">---</text><text x="34" y="221" font-size="14.5" class="cb" xml:space="preserve"></text><text x="34" y="246" font-size="14.5" class="cb" xml:space="preserve">You are a climate data</text><text x="34" y="271" font-size="14.5" class="cb" xml:space="preserve">quality-control specialist.</text><text x="34" y="296" font-size="14.5" class="cb" xml:space="preserve"></text><text x="34" y="321" font-size="14.5" class="cb" xml:space="preserve">## Rules</text><text x="34" y="346" font-size="14.5" class="cb" xml:space="preserve">- Never change files.</text><text x="34" y="371" font-size="14.5" class="cb" xml:space="preserve">- Report in a table.</text><path d="M 324 30 L 334 30 L 334 200 L 324 200" class="ln"/><text x="344" y="100" class="t b" font-size="15" text-anchor="start">Frontmatter</text><text x="344" y="122" class="m" font-size="13.5" text-anchor="start">settings</text><text x="344" y="142" class="c" font-size="13" text-anchor="start">key: value</text><path d="M 324 236 L 334 236 L 334 390 L 324 390" class="ln"/><text x="344" y="318" class="t b" font-size="15" text-anchor="start">Body</text><text x="344" y="340" class="m" font-size="13.5" text-anchor="start">instructions</text><text x="344" y="360" class="m" font-size="13.5" text-anchor="start">(Markdown)</text><text x="240" y="428" class="m" font-size="13.5" text-anchor="middle">Line 1 must be exactly ---  ·  one space after each colon</text></svg>
