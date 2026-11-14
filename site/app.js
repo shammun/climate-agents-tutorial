@@ -276,3 +276,19 @@ document.addEventListener('click', e => {
     /* Three.js unavailable or failed — canvas stays blank, page works fine */
   }
 })();
+
+/* Video graceful degradation */
+(function () {
+  const vid = document.getElementById('explainerVideo');
+  const unavail = document.getElementById('videoUnavailable');
+  if (!vid || !unavail) return;
+  vid.addEventListener('error', () => {
+    vid.style.display = 'none';
+    unavail.style.display = 'block';
+  });
+  /* Also check immediately — some browsers fire error synchronously */
+  if (vid.error) {
+    vid.style.display = 'none';
+    unavail.style.display = 'block';
+  }
+})();

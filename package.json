@@ -4,11 +4,21 @@
   "type": "module",
   "scripts": {
     "build": "node site/build.mjs",
-    "preview": "sirv dist --port 4000 --single"
+    "preview": "sirv dist --port 4000 --single",
+    "preview-video": "remotion studio remotion/index.jsx",
+    "render-video": "node render.mjs"
   },
   "dependencies": {
     "marked": "^12.0.0",
     "shiki": "^1.14.1",
     "sirv-cli": "^2.0.2"
+  },
+  "devDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.246",
+    "@remotion/bundler": "^4.0.246",
+    "@remotion/renderer": "^4.0.246",
+    "@remotion/cli": "^4.0.246"
   }
 }

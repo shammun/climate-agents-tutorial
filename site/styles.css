@@ -537,6 +537,46 @@ tbody tr:hover { background: var(--accbg); }
 .toast.show { opacity: 1; }
 
 /* ============================================================
+   Video section
+   ============================================================ */
+.video-section {
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+  padding: 72px 32px 80px;
+  border-bottom: 1px solid var(--line);
+}
+.video-wrap { max-width: 920px; margin: 0 auto; }
+.video-heading { margin-bottom: 24px; }
+.video-eyebrow {
+  display: inline-block; color: var(--acc); font-weight: 700;
+  font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+  background: var(--accbg); border: 1px solid var(--acc);
+  padding: 4px 14px; border-radius: 50px; margin-bottom: 10px;
+}
+.video-title {
+  font-size: clamp(22px, 3vw, 32px); font-weight: 800; margin: 0;
+  letter-spacing: -.025em; border-left: none; padding-left: 0;
+}
+.video-title::after { display: none; }
+.video-player {
+  border-radius: 16px; overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(45,212,191,.08);
+  background: #000;
+  position: relative;
+}
+.video-unavailable {
+  padding: 56px 32px; text-align: center; color: var(--muted);
+  background: linear-gradient(135deg, var(--bg2), var(--bg));
+  border-radius: 16px; border: 1px dashed var(--line);
+}
+.video-unavailable code {
+  background: var(--bg2); border: 1px solid var(--line);
+  padding: .2em .5em; border-radius: 6px;
+  color: var(--acc2); font-family: var(--mono); font-size: .9em;
+}
+.video-unavailable a { color: var(--acc2); }
+
+/* ============================================================
    Mobile
    ============================================================ */
 @media (max-width: 960px) {
@@ -556,6 +596,7 @@ tbody tr:hover { background: var(--accbg); }
     background: rgba(2, 6, 23, .5); z-index: 65;
     backdrop-filter: blur(2px);
   }
+  .video-section { padding: 48px 20px 56px; }
   .hero { padding: 60px 20px 40px; min-height: unset; }
   .hero-content { text-align: left; }
   .hero-btns { justify-content: flex-start; }

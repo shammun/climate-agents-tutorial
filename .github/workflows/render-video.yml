@@ -1,0 +1,37 @@
+name: Render explainer video
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install system deps (Chromium + ffmpeg)
+        run: |
+          npx remotion browser ensure
+          sudo apt-get install -y ffmpeg
+
+      - name: Render video
+        run: node render.mjs
+
+      - name: Commit rendered video
+        run: |
+          git config user.name "Shammunul Islam"
+          git config user.email "shais13irs@gmail.com"
+          git add dist/videos/explainer.mp4
+          git diff --cached --quiet || git commit -m "Render explainer video"
+          git push

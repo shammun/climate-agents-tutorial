@@ -308,6 +308,15 @@ async function main() {
   copyFileSync(join(SITE, 'app.js'), join(DIST, 'assets', 'app.js'));
   console.log('  copied assets');
 
+  /* copy pre-rendered video if it exists */
+  const videoSrc = join(ROOT, 'dist', 'videos', 'explainer.mp4');
+  const videoDst = join(DIST, 'videos', 'explainer.mp4');
+  if (existsSync(videoSrc) && videoSrc !== videoDst) {
+    ensureDir(dirname(videoDst));
+    copyFileSync(videoSrc, videoDst);
+    console.log('  copied pre-rendered explainer video');
+  }
+
   /* verify no unresolved markers */
   const remaining = shell.match(/<!--\s*(include|diagram):/g);
   if (remaining) console.warn('  WARNING: unresolved markers remaining:', remaining.length);

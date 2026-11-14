@@ -35,6 +35,31 @@
     <p class="byline">By <a href="https://github.com/shammun">Shammunul Islam</a></p>
   </div>
 </section>
+<section class="video-section" id="explainer-video" aria-label="Explainer video">
+  <div class="video-wrap">
+    <div class="video-heading">
+      <span class="video-eyebrow">60-second overview</span>
+      <h2 class="video-title">Watch the explainer</h2>
+    </div>
+    <div class="video-player" id="videoPlayer">
+      <video
+        id="explainerVideo"
+        src="videos/explainer.mp4"
+        poster="assets/video-poster.jpg"
+        controls
+        preload="none"
+        style="width:100%;border-radius:14px;display:block;"
+        aria-label="Animated explainer: AI agents for climate data analysis"
+      >
+        Your browser does not support HTML5 video.
+      </video>
+      <div class="video-unavailable" id="videoUnavailable" style="display:none;">
+        <p>Video not yet rendered. Run <code>npm run render-video</code> locally (needs ffmpeg), commit <code>dist/videos/explainer.mp4</code>, and push — or trigger the <strong>Render explainer video</strong> workflow in GitHub Actions.</p>
+        <p><a href="https://github.com/shammun/climate-agents-tutorial">View repository →</a></p>
+      </div>
+    </div>
+  </div>
+</section>
 <div class="layout">
   <nav class="toc" id="toc" aria-label="Contents">
     <p class="toc-title">Contents</p>
