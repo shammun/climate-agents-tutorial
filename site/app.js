@@ -1,18 +1,3 @@
-/* Theme toggle */
-(function () {
-  const root = document.documentElement;
-  const btn = document.getElementById('themeBtn');
-  const stored = (() => { try { return localStorage.getItem('theme'); } catch { return null; } })();
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const initial = stored || (prefersDark ? 'dark' : 'light');
-  if (initial === 'dark') root.setAttribute('data-theme', 'dark');
-
-  btn && btn.addEventListener('click', () => {
-    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', next);
-    try { localStorage.setItem('theme', next); } catch {}
-  });
-})();
 
 /* Reading progress bar */
 (function () {
