@@ -180,13 +180,11 @@ document.addEventListener('click', e => {
 
 /* Video graceful degradation */
 (function () {
-  [['explainerVideo', 'videoUnavailable'], ['buildingAgentsVideo', 'videoUnavailable2']].forEach(([vidId, unavailId]) => {
-    const vid = document.getElementById(vidId);
-    const unavail = document.getElementById(unavailId);
-    if (!vid || !unavail) return;
-    vid.addEventListener('error', () => { vid.style.display = 'none'; unavail.style.display = 'block'; });
-    if (vid.error) { vid.style.display = 'none'; unavail.style.display = 'block'; }
-  });
+  const vid = document.getElementById('buildingAgentsVideo');
+  const unavail = document.getElementById('videoUnavailable2');
+  if (!vid || !unavail) return;
+  vid.addEventListener('error', () => { vid.style.display = 'none'; unavail.style.display = 'block'; });
+  if (vid.error) { vid.style.display = 'none'; unavail.style.display = 'block'; }
 })();
 
 /* Hero globe: Blue Marble with animated ocean currents, trade winds and jet streams.

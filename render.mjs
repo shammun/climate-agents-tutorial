@@ -17,15 +17,29 @@ fs.mkdirSync(assetsDir, { recursive: true });
 fs.mkdirSync(publicDir, { recursive: true });
 
 if (!fs.existsSync(musicPath)) {
-  console.log('Generating ambient A-minor music with ffmpeg…');
+  console.log('Generating upbeat music with ffmpeg…');
+  // 120 BPM C-major arpeggio (C4-E4-G4-B4 cycling every 0.25s), punchy bass on beats, airy pad
   execSync(
     `ffmpeg -y ` +
-    `-f lavfi -i "sine=frequency=110:duration=66" ` +
-    `-f lavfi -i "sine=frequency=165:duration=66" ` +
-    `-f lavfi -i "sine=frequency=220:duration=66" ` +
-    `-f lavfi -i "sine=frequency=261:duration=66" ` +
-    `-f lavfi -i "sine=frequency=330:duration=66" ` +
-    `-filter_complex "[0]volume=0.18[a0];[1]volume=0.14[a1];[2]volume=0.16[a2];[3]volume=0.12[a3];[4]volume=0.10[a4];[a0][a1][a2][a3][a4]amix=inputs=5,aecho=0.6:0.7:80:0.3,afade=t=in:st=0:d=2,afade=t=out:st=63:d=3" ` +
+    // Arpeggio notes (C4 E4 G4 B4 at 120 BPM, 8th notes = 0.25s each)
+    `-f lavfi -i "aevalsrc=sin(2*PI*261.63*t)*if(lt(mod(t,1.0),0.22),0.55,0.0):c=mono:s=44100:d=66" ` +
+    `-f lavfi -i "aevalsrc=sin(2*PI*329.63*t)*if(lt(mod(t-0.25,1.0),0.22),0.50,0.0):c=mono:s=44100:d=66" ` +
+    `-f lavfi -i "aevalsrc=sin(2*PI*392.00*t)*if(lt(mod(t-0.50,1.0),0.22),0.48,0.0):c=mono:s=44100:d=66" ` +
+    `-f lavfi -i "aevalsrc=sin(2*PI*493.88*t)*if(lt(mod(t-0.75,1.0),0.22),0.44,0.0):c=mono:s=44100:d=66" ` +
+    // Bass: C2 on every beat (0.5s), short punch
+    `-f lavfi -i "aevalsrc=sin(2*PI*65.41*t)*if(lt(mod(t,0.5),0.18),0.70,0.0):c=mono:s=44100:d=66" ` +
+    // Mid harmony pad: C4+G4 sustained quietly
+    `-f lavfi -i "aevalsrc=sin(2*PI*261.63*t)*0.12+sin(2*PI*392.00*t)*0.10+sin(2*PI*523.25*t)*0.09:c=mono:s=44100:d=66" ` +
+    // High sparkle: C6 on every 2nd 8th note
+    `-f lavfi -i "aevalsrc=sin(2*PI*1046.5*t)*if(lt(mod(t-0.25,0.5),0.12),0.22,0.0):c=mono:s=44100:d=66" ` +
+    `-filter_complex ` +
+    `"[0]volume=0.80[a0];[1]volume=0.72[a1];[2]volume=0.70[a2];[3]volume=0.65[a3];` +
+    `[4]volume=0.75[a4];[5]volume=0.55[a5];[6]volume=0.40[a6];` +
+    `[a0][a1][a2][a3][a4][a5][a6]amix=inputs=7,` +
+    `aecho=0.5:0.4:60:0.25,` +
+    `equalizer=f=200:t=o:w=100:g=3,` +
+    `equalizer=f=4000:t=o:w=1000:g=2,` +
+    `afade=t=in:st=0:d=1.5,afade=t=out:st=63:d=3" ` +
     `-t 66 "${musicPath}"`,
     { stdio: 'inherit' }
   );
@@ -67,5 +81,4 @@ async function renderComposition(id, outFile) {
   console.log(`\nDone → ${outPath}`);
 }
 
-await renderComposition('Explainer', 'explainer.mp4');
 await renderComposition('BuildingAgents', 'building-agents.mp4');
