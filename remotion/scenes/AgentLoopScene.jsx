@@ -34,7 +34,7 @@ const GlowArrow = ({ frame, startFrame, label }) => (
 
 export const AgentLoopScene = () => {
   const frame = useCurrentFrame();
-  const exitOp = interpolate(frame, [390, 420], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const exitOp = interpolate(frame, [210, 240], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
   return (
     <AbsoluteFill style={{ opacity: exitOp }}>

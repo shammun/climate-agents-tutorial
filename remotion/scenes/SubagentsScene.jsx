@@ -15,7 +15,7 @@ const AGENTS = [
 
 export const SubagentsScene = () => {
   const frame = useCurrentFrame();
-  const exitOp = interpolate(frame, [330, 360], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const exitOp = interpolate(frame, [160, 180], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
   return (
     <AbsoluteFill style={{ opacity: exitOp }}>
@@ -61,8 +61,8 @@ export const SubagentsScene = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, width: 580, marginTop: 4 }}>
           {AGENTS.map((ag, i) => (
             <div key={ag.name} style={{
-              opacity: fi(frame, 70 + i * 22),
-              transform: `translateY(${si(frame, 70 + i * 22)}px)`,
+              opacity: fi(frame, 65 + i * 15),
+              transform: `translateY(${si(frame, 65 + i * 15)}px)`,
               background: `linear-gradient(135deg, ${ag.color}18, ${ag.color}0a)`,
               border: `1.5px solid ${ag.color}50`,
               borderRadius: 12, padding: '12px 16px',
@@ -83,7 +83,7 @@ export const SubagentsScene = () => {
           ))}
         </div>
 
-        <div style={{ color: '#475569', fontSize: 13, marginTop: 16, textAlign: 'center', opacity: fi(frame, 180) }}>
+        <div style={{ color: '#475569', fontSize: 13, marginTop: 16, textAlign: 'center', opacity: fi(frame, 130) }}>
           Each subagent starts with an empty context and returns only a short summary.
         </div>
       </AbsoluteFill>

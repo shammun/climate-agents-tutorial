@@ -12,7 +12,7 @@ const BUTTONS = [
 
 export const CTAScene = () => {
   const frame = useCurrentFrame();
-  const exitOp = interpolate(frame, [270, 300], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const exitOp = interpolate(frame, [100, 120], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
   return (
     <AbsoluteFill style={{ opacity: exitOp }}>
@@ -44,7 +44,7 @@ export const CTAScene = () => {
         </h2>
 
         <div style={{
-          opacity: fi(frame, 45),
+          opacity: fi(frame, 20),
           background: 'linear-gradient(135deg, rgba(13,148,136,.2), rgba(8,145,178,.2))',
           border: '1px solid rgba(45,212,191,.3)',
           borderRadius: 12, padding: '14px 28px',
@@ -55,7 +55,7 @@ export const CTAScene = () => {
           shammun.github.io/climate-agents-tutorial
         </div>
 
-        <div style={{ display: 'flex', gap: 12, opacity: fi(frame, 85) }}>
+        <div style={{ display: 'flex', gap: 12, opacity: fi(frame, 40) }}>
           {BUTTONS.map(({ label, primary }, i) => (
             <div key={i} style={{
               background: primary
@@ -69,7 +69,7 @@ export const CTAScene = () => {
           ))}
         </div>
 
-        <div style={{ color: '#334155', fontSize: 13, opacity: fi(frame, 125) }}>
+        <div style={{ color: '#334155', fontSize: 13, opacity: fi(frame, 60) }}>
           CC BY 4.0 tutorial text · MIT template code · By Shammunul Islam
         </div>
       </AbsoluteFill>

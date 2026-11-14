@@ -18,10 +18,10 @@ const lineH = interpolate;
 
 export const PipelineScene = () => {
   const frame = useCurrentFrame();
-  const exitOp = interpolate(frame, [450, 480], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const exitOp = interpolate(frame, [185, 210], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
   // Vertical connector line height grows from step 1 to step 5
-  const lineProgress = interpolate(frame, [20, 220], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const lineProgress = interpolate(frame, [20, 160], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
   return (
     <AbsoluteFill style={{ opacity: exitOp }}>
@@ -47,8 +47,8 @@ export const PipelineScene = () => {
           {STEPS.map((step, i) => (
             <div key={step.n} style={{
               display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10,
-              opacity: fi(frame, 20 + i * 50),
-              transform: `translateX(${interpolate(frame, [20 + i * 50, 40 + i * 50], [-20, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })}px)`,
+              opacity: fi(frame, 20 + i * 28),
+              transform: `translateX(${interpolate(frame, [20 + i * 28, 40 + i * 28], [-20, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })}px)`,
             }}>
               {/* Number circle */}
               <div style={{
@@ -93,7 +93,7 @@ export const PipelineScene = () => {
           ))}
         </div>
 
-        <div style={{ color: '#475569', fontSize: 13, marginTop: 10, textAlign: 'center', opacity: fi(frame, 270) }}>
+        <div style={{ color: '#475569', fontSize: 13, marginTop: 10, textAlign: 'center', opacity: fi(frame, 155) }}>
           Each step writes files the next step reads.
         </div>
       </AbsoluteFill>

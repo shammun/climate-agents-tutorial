@@ -16,12 +16,22 @@
 <header class="topbar">
   <button class="menu-btn" id="menuBtn" aria-label="Open contents" aria-expanded="false">☰</button>
   <a class="brand" href="#top">Agents for Climate Data</a>
+  <nav class="topbar-nav" aria-label="Quick navigation">
+    <a href="#introduction" class="topbar-link">Tutorial</a>
+    <a href="#downloads" class="topbar-link">Downloads</a>
+    <a href="https://github.com/shammun/climate-agents-tutorial" class="topbar-link" target="_blank" rel="noopener">GitHub&nbsp;↗</a>
+  </nav>
   <button class="theme-btn" id="themeBtn" aria-label="Switch light or dark theme">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
   </button>
 </header>
 <section class="hero" id="top">
-  <canvas id="heroCanvas" aria-hidden="true"></canvas>
+  <div class="hero-orbs" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="hero-grid" aria-hidden="true"></div>
   <div class="hero-content">
     <p class="eyebrow">Tutorial · November 2026</p>
     <h1 class="hero-title">Building AI Agents for Climate Data Analysis</h1>
@@ -38,7 +48,7 @@
 <section class="video-section" id="explainer-video" aria-label="Explainer video">
   <div class="video-wrap">
     <div class="video-heading">
-      <span class="video-eyebrow">60-second overview</span>
+      <span class="video-eyebrow">30-second overview</span>
       <h2 class="video-title">Watch the explainer</h2>
     </div>
     <div class="video-player" id="videoPlayer">
@@ -76,7 +86,6 @@
   <p>Last updated: November 2026</p>
 </footer>
 <div class="toast" id="toast"></div>
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

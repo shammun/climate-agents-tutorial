@@ -8,7 +8,7 @@ export const TitleScene = () => {
   const titleY       = interpolate(frame, [15, 45], [40, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   const subOpacity   = interpolate(frame, [45, 75], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   const bylineOp     = interpolate(frame, [75, 100], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const exitOpacity  = interpolate(frame, [210, 240], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const exitOpacity  = interpolate(frame, [120, 150], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   const eyebrowOp    = interpolate(frame, [5, 25], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
   return (

@@ -9,19 +9,19 @@ export const Explainer = () => (
   <AbsoluteFill style={{ background: '#060d1f', fontFamily: 'Inter, system-ui, sans-serif' }}>
     <Audio src={staticFile('ambient.mp3')} volume={0.7} />
     <Series>
-      <Series.Sequence durationInFrames={240}>
+      <Series.Sequence durationInFrames={150}>
         <TitleScene />
       </Series.Sequence>
-      <Series.Sequence durationInFrames={420}>
+      <Series.Sequence durationInFrames={240}>
         <AgentLoopScene />
       </Series.Sequence>
-      <Series.Sequence durationInFrames={360}>
+      <Series.Sequence durationInFrames={180}>
         <SubagentsScene />
       </Series.Sequence>
-      <Series.Sequence durationInFrames={480}>
+      <Series.Sequence durationInFrames={210}>
         <PipelineScene />
       </Series.Sequence>
-      <Series.Sequence durationInFrames={300}>
+      <Series.Sequence durationInFrames={120}>
         <CTAScene />
       </Series.Sequence>
     </Series>

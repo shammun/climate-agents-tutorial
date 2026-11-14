@@ -113,8 +113,15 @@ a { color: var(--acc2); }
 }
 .brand:hover { opacity: .8; }
 .topbar-nav {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 2px;
 }
+.topbar-link {
+  color: #64748b; font-size: 13.5px; font-weight: 500;
+  text-decoration: none; padding: 6px 12px; border-radius: 8px;
+  transition: color .15s, background .15s;
+  white-space: nowrap;
+}
+.topbar-link:hover { color: #2dd4bf; background: rgba(45,212,191,.08); }
 .theme-btn svg { width: 18px; height: 18px; display: block; margin: auto; }
 .menu-btn, .theme-btn {
   border: 1px solid rgba(45, 212, 191, .2);
@@ -144,10 +151,59 @@ a { color: var(--acc2); }
   background: linear-gradient(135deg, #060d1f 0%, #091825 40%, #072420 70%, #060d1f 100%);
   padding: 80px 32px 60px;
 }
-#heroCanvas {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  z-index: 0; pointer-events: none;
+/* Gradient orbs */
+.hero-orbs {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
+}
+.orb {
+  position: absolute; border-radius: 50%; pointer-events: none;
+}
+.orb-1 {
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(13,148,136,.38) 0%, transparent 65%);
+  top: -280px; left: -160px;
+  filter: blur(60px);
+  animation: orbDrift1 20s ease-in-out infinite;
+}
+.orb-2 {
+  width: 560px; height: 560px;
+  background: radial-gradient(circle, rgba(8,145,178,.28) 0%, transparent 65%);
+  bottom: -180px; right: -100px;
+  filter: blur(60px);
+  animation: orbDrift2 26s ease-in-out infinite;
+}
+.orb-3 {
+  width: 340px; height: 340px;
+  background: radial-gradient(circle, rgba(124,58,237,.2) 0%, transparent 65%);
+  top: 50%; left: 58%;
+  transform: translate(-50%, -50%);
+  filter: blur(50px);
+  animation: orbDrift3 17s ease-in-out infinite;
+}
+@keyframes orbDrift1 {
+  0%, 100% { transform: translate(0, 0); }
+  33%       { transform: translate(90px, 50px); }
+  66%       { transform: translate(45px, -70px); }
+}
+@keyframes orbDrift2 {
+  0%, 100% { transform: translate(0, 0); }
+  40%       { transform: translate(-70px, 30px); }
+  70%       { transform: translate(-35px, -55px); }
+}
+@keyframes orbDrift3 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%       { transform: translate(-50%, -50%) scale(1.4); }
+}
+/* Dot grid overlay */
+.hero-grid {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image: radial-gradient(circle, rgba(45,212,191,.13) 1px, transparent 1px);
+  background-size: 36px 36px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 85% at 50% 50%, black 20%, transparent 100%);
+  mask-image: radial-gradient(ellipse 85% 85% at 50% 50%, black 20%, transparent 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .orb { animation: none !important; }
 }
 .hero-content {
   position: relative; z-index: 1;
