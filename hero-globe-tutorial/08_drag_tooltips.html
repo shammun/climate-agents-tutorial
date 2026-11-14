@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<!--
+  STEP 8 — Drag rotation with inertia and hover tooltips
+  =======================================================
+  Builds on Step 7.  New topics:
+    Pointer Events API  — unified events for mouse, pen and touch
+    Velocity and inertia — exponential decay back to auto-spin
+    Globe tilt          — a tilt Group lets vertical drag change the view
+    Raycasting          — projecting path points to screen space for tooltip pick
+    Trade wind belt pick — sphere intersection + lat range check
+    Tooltip positioning — clamped to stay inside the hero bounds
+    prefers-reduced-motion — skip animation entirely for accessibility
+
+  Drag model
+  ──────────
+  We track TWO separate rotations using Three.js Groups:
+    tilt — rotates around X (vertical drag tilts the globe)
+    spin — rotates around Y (horizontal drag spins the globe)
+
+  Velocity is tracked as a scalar (radians per second for the spin axis).
+  When the user drags, we compute the instantaneous velocity from dx/dt.
+  After pointer release, velocity decays exponentially back toward AUTO
+  (the auto-spin rate) using:
+    vel += (AUTO - vel) * min(1, dt * 1.5)
+
+  At dt = 1/60 this gives a time constant of about 0.6 seconds.
+
+  Tooltip picking
+  ───────────────
+  To find which ocean current is under the pointer:
+  1. For each path, sample it at ~90 evenly spaced points.
+  2. Project each 3-D point to screen space using Three.js's .project(camera) method.
+  3. Find the closest projected point to the pointer.
+  4. If that closest distance is < 18 CSS pixels, return that current's data.
+
+  We skip points that are on the far side of the globe (facing away from camera)
+  by checking:  P̂ · cameraPos − |P|² < threshold.
+  This avoids picking currents that are geometrically behind the globe.
+  If no current is close enough, fall back to sphere intersection + lat check
+  for trade wind belt detection.
+
+  prefers-reduced-motion
+  ──────────────────────
+  Some users have vestibular disorders that make animations cause physical discomfort.
+  The CSS/JS media query (prefers-reduced-motion: reduce) lets us detect this
+  preference and disable all movement — the globe shows as a still image.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Step 8 — Drag and Tooltips</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000510; overflow: hidden; }
+    #hero { position: relative; width: 100vw; height: 100vh; cursor: grab; }
+    #hero.is-dragging { cursor: grabbing; }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    .globe-tip {
+      position: absolute; top: 0; left: 0;
+      background: rgba(6, 25, 50, 0.88);
+      border: 1px solid rgba(100, 200, 255, 0.3);
+      border-radius: 8px;
+      padding: 7px 12px;
+      color: #e8f4ff;
+      font: 13px/1.5 system-ui, sans-serif;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      max-width: 220px;
+    }
+    .globe-tip.show { opacity: 1; }
+    .tip-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .tip-desc { display: block; font-size: 11px; color: #aacce0; margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<div id="hero">
+  <canvas id="globeCanvas"></canvas>
+  <div class="globe-tip" id="tip">
+    <span class="tip-dot" id="tipDot"></span>
+    <span id="tipName"></span>
+    <span class="tip-desc" id="tipDesc"></span>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.min.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const TEXTURE_URL = '../site/assets/blue_marble.jpg';
+const COAST_URL   = 'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json';
+const D2R = Math.PI / 180;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const smooth = (a, b, x) => { const t = clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+function ll(lat, lon, r) { const a=lat*D2R,b=lon*D2R,c=Math.cos(a)*r; return [c*Math.cos(b),Math.sin(a)*r,-c*Math.sin(b)]; }
+function cr(a,b,c,d,t){return 0.5*(2*b+(c-a)*t+(2*a-5*b+4*c-d)*t*t+(3*b-a-3*c+d)*t*t*t);}
+function buildPath(pts,closed,radius){const P=pts.map(p=>[p[0],p[1]]);for(let i=1;i<P.length;i++){while(P[i][1]-P[i-1][1]>180)P[i][1]-=360;while(P[i][1]-P[i-1][1]<-180)P[i][1]+=360;}const n=P.length,get=i=>{if(!closed)return P[clamp(i,0,n-1)];const q=P[((i%n)+n)%n];return[q[0],q[1]+360*Math.floor(i/n)];};const raw=[],segs=closed?n:n-1,SUB=14;for(let s=0;s<segs;s++){const a=get(s-1),b=get(s),c=get(s+1),d=get(s+2);for(let j=0;j<SUB;j++)raw.push(ll(cr(a[0],b[0],c[0],d[0],j/SUB),cr(a[1],b[1],c[1],d[1],j/SUB),radius));}raw.push(closed?raw[0]:ll(P[n-1][0],P[n-1][1],radius));const cum=[0];for(let i=1;i<raw.length;i++)cum.push(cum[i-1]+Math.hypot(raw[i][0]-raw[i-1][0],raw[i][1]-raw[i-1][1],raw[i][2]-raw[i-1][2]));const len=cum[cum.length-1],m=Math.max(24,Math.ceil(len/0.008)),pos=new Float32Array((m+1)*3);for(let i=0,k=0;i<=m;i++){const target=len*i/m;while(k<raw.length-2&&cum[k+1]<target)k++;const t=cum[k+1]>cum[k]?clamp((target-cum[k])/(cum[k+1]-cum[k]),0,1):0;for(let c=0;c<3;c++)pos[i*3+c]=raw[k][c]+(raw[k+1][c]-raw[k][c])*t;}return{pos,m,len,closed};}
+function samplePath(path,s,out,o){const f=clamp(s,0,1)*path.m,i=Math.min(Math.floor(f),path.m-1),t=f-i,p=path.pos;out[o]=p[i*3]+(p[i*3+3]-p[i*3])*t;out[o+1]=p[i*3+1]+(p[i*3+4]-p[i*3+1])*t;out[o+2]=p[i*3+2]+(p[i*3+5]-p[i*3+2])*t;}
+
+// ── Renderer ─────────────────────────────────────────────────────────────────
+const hero   = document.getElementById('hero');
+const canvas = document.getElementById('globeCanvas');
+
+// Check the user's motion preference BEFORE initialising any animation
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (reduced) console.log('prefers-reduced-motion: reduce — globe will not animate');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 2, 0.1, 100);
+camera.position.set(0, 0, 2.5);
+
+// Two groups for the two rotation axes.
+// tilt is the outer group — it rotates around X (vertical drag)
+// spin is the inner group — it rotates around Y (horizontal drag)
+const tilt = new THREE.Group(), spin = new THREE.Group();
+tilt.add(spin); scene.add(tilt);
+tilt.rotation.x = 0.3;  // slight downward tilt at start
+
+// ── Globe + features (abbreviated) ───────────────────────────────────────────
+const globeMat = new THREE.MeshBasicMaterial({ color: 0x0b2238 });
+spin.add(new THREE.Mesh(new THREE.SphereGeometry(1,128,64),globeMat));
+new THREE.TextureLoader().load(TEXTURE_URL,tex=>{tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());globeMat.map=tex;globeMat.color.setScalar(0.78);globeMat.needsUpdate=true;},undefined,()=>{});
+{const v=[];for(let lat=-60;lat<=60;lat+=30)for(let lon=-180;lon<180;lon+=3){v.push(...ll(lat,lon,1.002));v.push(...ll(lat,lon+3,1.002));}for(let lon=-180;lon<180;lon+=30)for(let lat=-87;lat<87;lat+=3){v.push(...ll(lat,lon,1.002));v.push(...ll(lat+3,lon,1.002));}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));spin.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x9ccfe8,transparent:true,opacity:0.13,depthWrite:false})));}
+const atmoVS='varying vec3 vN; varying vec3 vP; void main() { vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vP = mv.xyz; gl_Position = projectionMatrix * mv; }';
+spin.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(1.003,96,48),new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:'varying vec3 vN; varying vec3 vP; void main() { float f = 1.0 - max(0.0, dot(normalize(vN), normalize(-vP))); gl_FragColor = vec4(0.35, 0.68, 1.0, pow(f, 2.6) * 0.75); }',transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})),{renderOrder:1}));
+scene.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(1.2,96,48),new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:'varying vec3 vN; varying vec3 vP; void main() { float d = max(0.0, -dot(normalize(vN), normalize(-vP))); gl_FragColor = vec4(0.22, 0.6, 1.0, pow(clamp(d * 1.8, 0.0, 1.0), 2.4) * 0.85); }',transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.BackSide})),{renderOrder:8}));
+fetch(COAST_URL).then(r=>r.ok?r.json():Promise.reject()).then(topo=>{const sc=topo.transform.scale,tr=topo.transform.translate,v=[];for(const arc of topo.arcs){let x=0,y=0,prev=null;for(const d of arc){x+=d[0];y+=d[1];const p=ll(y*sc[1]+tr[1],x*sc[0]+tr[0],1.003);if(prev)v.push(prev[0],prev[1],prev[2],p[0],p[1],p[2]);prev=p;}}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));spin.add(Object.assign(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x8ff0e0,transparent:true,opacity:0.32,depthWrite:false})),{renderOrder:3}));}).catch(()=>{});
+
+// ── Ocean currents (abbreviated: 3 currents) ──────────────────────────────────
+const FLOWS_DATA = [
+  {name:'Gulf Stream',desc:'Warm western boundary current of the North Atlantic.',color:'#f59e0b',speed:0.10,pts:[[24.2,-81.5],[26,-79.7],[30,-79.5],[33,-77],[35.5,-74.3],[38,-70],[39.5,-64],[40.5,-57],[42,-50],[45,-43],[48,-36]]},
+  {name:'Kuroshio Current',desc:'Warm western boundary current of the North Pacific.',color:'#22d3ee',speed:0.09,pts:[[16,123.8],[20,122.6],[24,122.8],[27,125.8],[29.5,129.5],[31.5,132.5],[33,136],[34.3,139.5],[35.3,142],[36,147],[35.5,153],[36.5,160],[37.5,168]]},
+  {name:'Antarctic Circumpolar Current',desc:'Flows east around Antarctica; the largest current on Earth by volume.',color:'#60a5fa',speed:0.05,closed:true,pts:[[-58,-180],[-59,-160],[-60,-140],[-60,-120],[-60,-100],[-60,-80],[-59,-65],[-56,-55],[-52,-40],[-50,-20],[-50,0],[-49,20],[-48,40],[-48,60],[-50,80],[-51,100],[-53,120],[-55,140],[-57,160]]},
+];
+const TRADE_TIPS = {
+  n: { name:'Trade winds (north-east)', desc:'Steady surface winds that blow from the north-east toward the equator.' },
+  s: { name:'Trade winds (south-east)', desc:'Steady surface winds that blow from the south-east toward the equator.' },
+};
+
+const scaleU={value:Math.min(window.devicePixelRatio,2)};
+function makePtMat(){return new THREE.ShaderMaterial({uniforms:{uScale:scaleU},vertexShader:'attribute float aSize; attribute float aAlpha; attribute vec3 aColor; uniform float uScale; varying float vA; varying vec3 vC; void main() { vA=aAlpha; vC=aColor; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_PointSize=aSize*uScale; }',fragmentShader:'varying float vA; varying vec3 vC; void main() { float d=length(gl_PointCoord-0.5)*2.0; float a=pow(max(0.0,1.0-d),1.8); gl_FragColor=vec4(vC,vA*a); #include <colorspace_fragment> }',transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});}
+function makePts(n,order,parent){const g=new THREE.BufferGeometry(),pos=new Float32Array(n*3),col=new Float32Array(n*3),size=new Float32Array(n),alpha=new Float32Array(n);g.setAttribute('position',new THREE.BufferAttribute(pos,3).setUsage(THREE.DynamicDrawUsage));g.setAttribute('aColor',new THREE.BufferAttribute(col,3));g.setAttribute('aSize',new THREE.BufferAttribute(size,1));g.setAttribute('aAlpha',new THREE.BufferAttribute(alpha,1).setUsage(THREE.DynamicDrawUsage));const pts=new THREE.Points(g,makePtMat());pts.frustumCulled=false;pts.renderOrder=order;parent.add(pts);return{g,pos,col,size,alpha};}
+const TAIL=14,tailFall=Array.from({length:TAIL},(_,k)=>k===0?1:Math.pow(1-k/TAIL,1.3)*0.9);
+let seed=42;const rand=()=>{seed=(seed*1664525+1013904223)&0xffffffff;return(seed>>>0)/4294967296;};
+let tp=0;const flows=FLOWS_DATA.map(f=>{const path=buildPath(f.pts,!!f.closed,1.007),n=Math.max(3,Math.round(path.len/0.085)),tailStep=(0.028+f.speed*0.32)/TAIL/path.len;{const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(path.pos,3));const line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:new THREE.Color(f.color),transparent:true,opacity:0.28,depthWrite:false,blending:THREE.AdditiveBlending}));line.renderOrder=4;spin.add(line);}const phases=Array.from({length:n},(_,i)=>(i+(rand()-0.5)*0.5)/n);const fl={f,path,n,color:new THREE.Color(f.color),phases,tailStep,offset:tp,baseOpacity:0.28,line:null};tp+=n*TAIL;return fl;});
+const flowPts=makePts(tp,6,spin);for(const fl of flows){for(let p=0;p<fl.n;p++)for(let k=0;k<TAIL;k++){const i=fl.offset+p*TAIL+k;flowPts.col.set([fl.color.r,fl.color.g,fl.color.b],i*3);flowPts.size[i]=k===0?8:5.2-3.4*k/TAIL;}}
+
+function updateFlows(time){for(const fl of flows){const path=fl.path,adv=time*fl.f.speed/path.len;for(let p=0;p<fl.n;p++){let s0=(fl.phases[p]+adv)%1;if(s0<0)s0+=1;for(let k=0;k<TAIL;k++){const i=fl.offset+p*TAIL+k;let s=s0-k*fl.tailStep,a=tailFall[k];if(path.closed)s-=Math.floor(s);else if(s<0){s=0;a=0;}else a*=smooth(0,0.1,s)*(1-smooth(0.9,1,s));samplePath(path,s,flowPts.pos,i*3);flowPts.alpha[i]=a;}}}flowPts.g.attributes.position.needsUpdate=true;flowPts.g.attributes.aAlpha.needsUpdate=true;}
+
+// ── Picking and tooltip ───────────────────────────────────────────────────────
+let W = 1, H = 1;
+const v3   = new THREE.Vector3();
+const inv  = new THREE.Matrix4();
+const ray  = new THREE.Raycaster();
+const unit = new THREE.Sphere(new THREE.Vector3(), 1);
+const ndc  = new THREE.Vector2();
+const tip     = document.getElementById('tip');
+const tipDot  = document.getElementById('tipDot');
+const tipName = document.getElementById('tipName');
+const tipDesc = document.getElementById('tipDesc');
+
+function pick(x, y) {
+  let best = null, bestD = 18 * 18;  // 18 CSS pixels threshold
+
+  for (const fl of flows) {
+    const p = fl.path;
+    const step = Math.max(1, Math.floor(p.m / 90));  // sample at ~90 points
+    for (let i = 0; i <= p.m; i += step) {
+      v3.fromArray(p.pos, i * 3).applyMatrix4(spin.matrixWorld);
+
+      // Skip points on the far side: (P · cameraPos - |P|²) < 0 means facing away
+      if (v3.dot(camera.position) - v3.lengthSq() < 0.08) continue;
+
+      // Project to normalised device coordinates, then to pixel coords
+      v3.project(camera);
+      const px = (v3.x * 0.5 + 0.5) * W;
+      const py = (-v3.y * 0.5 + 0.5) * H;
+      const dx = px - x, dy = py - y, d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = fl; }
+    }
+  }
+  if (best) return { name: best.f.name, desc: best.f.desc, color: best.f.color };
+
+  // Fallback: sphere intersection for trade wind belt detection
+  ndc.set(x / W * 2 - 1, -(y / H) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  if (ray.ray.intersectSphere(unit, v3)) {
+    // Convert hit point from world space to globe's local space to get lat
+    v3.applyMatrix4(inv.copy(spin.matrixWorld).invert());
+    const lat = Math.asin(clamp(v3.y / v3.length(), -1, 1)) / D2R;
+    if (Math.abs(lat) >= 9 && Math.abs(lat) <= 25) {
+      return Object.assign({ color: '#fbbf24' }, lat > 0 ? TRADE_TIPS.n : TRADE_TIPS.s);
+    }
+  }
+  return null;
+}
+
+let tipTimer = 0;
+function showTip(hit, x, y) {
+  if (!hit) { tip.classList.remove('show'); return; }
+  tipDot.style.background = hit.color;
+  tipName.textContent = hit.name;
+  tipDesc.textContent = hit.desc;
+  // Clamp tooltip inside the hero bounds
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  const tx = clamp(x + 16, 8, Math.max(8, W - tw - 8));
+  const ty = clamp(y - th - 14, 8, Math.max(8, H - th - 8));
+  tip.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+  tip.classList.add('show');
+}
+
+// ── Pointer events ────────────────────────────────────────────────────────────
+// Listeners are on the hero div (not the canvas) so they still fire when the
+// pointer is over text overlays that sit on top of the canvas.
+const AUTO = reduced ? 0 : 0.072;  // auto-spin angular velocity (rad/s); 0 when motion-reduced
+let vel = AUTO, dragging = false, moved = 0, lastX = 0, lastY = 0, lastT = 0, pointerId = null;
+const isControl = t => !!(t && t.closest && t.closest('a, button'));
+const local = e => { const r = hero.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+
+hero.addEventListener('pointerdown', e => {
+  if (isControl(e.target) || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  dragging = true; moved = 0; pointerId = e.pointerId;
+  lastX = e.clientX; lastY = e.clientY; lastT = performance.now();
+  try { hero.setPointerCapture(e.pointerId); } catch {}
+  hero.classList.add('is-dragging');
+});
+
+hero.addEventListener('pointermove', e => {
+  if (dragging && e.pointerId === pointerId) {
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    const now = performance.now();
+    const k = 1 / 300;  // pixels to radians conversion
+    moved += Math.abs(dx) + Math.abs(dy);
+    spin.rotation.y += dx * k;
+    tilt.rotation.x = clamp(tilt.rotation.x + dy * k, -1.2, 1.2);
+    // Instantaneous velocity for inertia after release
+    if (!reduced) vel = clamp(dx * k / Math.max(0.008, (now - lastT) / 1000), -2.5, 2.5);
+    lastX = e.clientX; lastY = e.clientY; lastT = now;
+    if (moved > 6) showTip(null);  // hide tooltip if the user is dragging
+    return;
+  }
+  if (e.pointerType === 'touch') return;  // skip hover on touch devices
+  if (isControl(e.target)) { showTip(null); return; }
+  const p = local(e);
+  showTip(pick(p[0], p[1]), p[0], p[1]);
+});
+
+const endDrag = e => {
+  if (!dragging || e.pointerId !== pointerId) return;
+  dragging = false; hero.classList.remove('is-dragging');
+  try { hero.releasePointerCapture(e.pointerId); } catch {}
+  if (performance.now() - lastT > 120) vel = 0;  // stopped drag → no inertia
+};
+hero.addEventListener('pointerup', endDrag);
+hero.addEventListener('pointercancel', endDrag);
+hero.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') showTip(null); });
+
+// ── Resize ───────────────────────────────────────────────────────────────────
+function resize() {
+  W = Math.max(1, hero.clientWidth); H = Math.max(1, hero.clientHeight);
+  renderer.setSize(W, H, false);
+  camera.aspect = W / H;
+  camera.updateProjectionMatrix();
+  scaleU.value = Math.min(window.devicePixelRatio, 2);
+}
+if ('ResizeObserver' in window) new ResizeObserver(resize).observe(hero);
+else window.addEventListener('resize', resize);
+resize();
+
+// ── Animation loop ────────────────────────────────────────────────────────────
+let last = performance.now(), time = 0;
+(function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!reduced) {
+    time += dt;
+    if (!dragging) {
+      spin.rotation.y += vel * dt;
+      // Exponential decay back to auto-spin — smoothly resumes after drag release
+      vel += (AUTO - vel) * Math.min(1, dt * 1.5);
+    }
+    updateFlows(time);
+  }
+  renderer.render(scene, camera);
+})(performance.now());
+</script>
+
+</body>
+</html>

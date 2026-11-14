@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<!--
+  STEP 4 — Coastlines from TopoJSON
+  ===================================
+  Builds on Step 3.  New topics:
+    fetch()          — loads the world-atlas JSON from a CDN at runtime
+    TopoJSON         — compact geographic format: arcs + delta encoding
+    Decoding TopoJSON arcs: transform → delta cumsum → lon/lat → ll() → 3-D
+    LineSegments     — reused from Step 3 to draw all coastline segments
+
+  TopoJSON format quick reference
+  ────────────────────────────────
+  A TopoJSON file has this shape:
+
+    {
+      "transform": {
+        "scale": [sx, sy],        // multiply by this to get real lon/lat
+        "translate": [tx, ty]     // then add this
+      },
+      "arcs": [                   // each arc is a coastline segment
+        [[x0,y0], [dx1,dy1], [dx2,dy2], …],  // first point absolute, rest are DELTAS
+        …
+      ],
+      "objects": { … }            // references to the arcs (we don't need this)
+    }
+
+  The coordinates stored in arcs are integers in a quantised space.
+  To recover real lon/lat:
+    1. Start a running total (x=0, y=0)
+    2. For each delta [dx, dy]: x += dx; y += dy
+    3. lon = x * scale[0] + translate[0]
+    4. lat = y * scale[1] + translate[1]
+
+  This delta encoding is why the first vertex in each arc stores absolute values
+  while all subsequent vertices store differences.  It compresses well because
+  consecutive coastline points are geographically close (small deltas → small integers).
+
+  The world-atlas package is served from jsDelivr CDN — no npm required.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Step 4 — Coastlines</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000510; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    #status { position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+              color: #adf; font: 13px/1.4 monospace; background: rgba(0,0,0,.55);
+              padding: 4px 10px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+<div id="status">Loading coastlines…</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.min.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const TEXTURE_URL = '../site/assets/blue_marble.jpg';
+const D2R = Math.PI / 180;
+
+// The world-atlas package, served from jsDelivr CDN.
+// land-110m.json is a low-resolution (1:110m scale) TopoJSON of the world's land masses.
+// "110m" means 1 mm on the map = 110 km in the real world — good enough for a globe.
+const COAST_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json';
+
+// ll() — geographic to Cartesian (see Step 3 for detailed explanation)
+function ll(lat, lon, r) {
+  const a = lat * D2R, b = lon * D2R, c = Math.cos(a) * r;
+  return [c * Math.cos(b), Math.sin(a) * r, -c * Math.sin(b)];
+}
+
+// ── Renderer, scene, camera (same setup as previous steps) ───────────────────
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0, 2.5);
+
+// ── Globe ─────────────────────────────────────────────────────────────────────
+const globeMat = new THREE.MeshBasicMaterial({ color: 0x0b2238 });
+const globe = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 64), globeMat);
+scene.add(globe);
+new THREE.TextureLoader().load(TEXTURE_URL, tex => {
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  globeMat.map = tex; globeMat.color.setScalar(0.78); globeMat.needsUpdate = true;
+}, undefined, () => {});
+
+// ── Graticule (from Step 3) ───────────────────────────────────────────────────
+{
+  const v = [];
+  for (let lat = -60; lat <= 60; lat += 30) for (let lon = -180; lon < 180; lon += 3) { v.push(...ll(lat, lon, 1.002)); v.push(...ll(lat, lon + 3, 1.002)); }
+  for (let lon = -180; lon < 180; lon += 30) for (let lat = -87; lat < 87; lat += 3) { v.push(...ll(lat, lon, 1.002)); v.push(...ll(lat + 3, lon, 1.002)); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+  globe.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x9ccfe8, transparent: true, opacity: 0.13, depthWrite: false })));
+}
+
+// ── Atmosphere (from Step 3) ──────────────────────────────────────────────────
+const atmoVS = 'varying vec3 vN; varying vec3 vP; void main() { vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vP = mv.xyz; gl_Position = projectionMatrix * mv; }';
+globe.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(1.003, 96, 48), new THREE.ShaderMaterial({
+  vertexShader: atmoVS, fragmentShader: 'varying vec3 vN; varying vec3 vP; void main() { float f = 1.0 - max(0.0, dot(normalize(vN), normalize(-vP))); gl_FragColor = vec4(0.35, 0.68, 1.0, pow(f, 2.6) * 0.75); }',
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })), { renderOrder: 1 }));
+scene.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(1.2, 96, 48), new THREE.ShaderMaterial({
+  vertexShader: atmoVS, fragmentShader: 'varying vec3 vN; varying vec3 vP; void main() { float d = max(0.0, -dot(normalize(vN), normalize(-vP))); gl_FragColor = vec4(0.22, 0.6, 1.0, pow(clamp(d * 1.8, 0.0, 1.0), 2.4) * 0.85); }',
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.BackSide })), { renderOrder: 8 }));
+
+// ── Coastlines from TopoJSON ──────────────────────────────────────────────────
+const status = document.getElementById('status');
+
+fetch(COAST_URL)
+  .then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
+  .then(topo => {
+    // topo.transform contains the quantisation parameters
+    const sc = topo.transform.scale;      // [sx, sy] — scale factors
+    const tr = topo.transform.translate;  // [tx, ty] — offsets
+
+    const v = [];  // will hold all LineSegments vertex pairs
+
+    for (const arc of topo.arcs) {
+      // delta-decode the arc back to absolute integer coordinates
+      let x = 0, y = 0;
+      let prev = null;
+
+      for (const d of arc) {
+        // Accumulate the delta.  The first delta is [x0, y0] (absolute starting point).
+        x += d[0];
+        y += d[1];
+
+        // Convert quantised integers to real lon/lat
+        //   lon = x * scale[0] + translate[0]
+        //   lat = y * scale[1] + translate[1]
+        const lon = x * sc[0] + tr[0];
+        const lat = y * sc[1] + tr[1];
+
+        // Convert to 3-D at radius 1.003 (just above the globe surface at radius 1)
+        // so the lines sit on top of the texture without z-fighting
+        const p = ll(lat, lon, 1.003);
+
+        if (prev !== null) {
+          // Push the START and END of this segment
+          v.push(prev[0], prev[1], prev[2]);
+          v.push(p[0],    p[1],    p[2]);
+        }
+        prev = p;
+      }
+    }
+
+    // Build geometry and add to the globe
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+    const lines = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({
+      color: 0x8ff0e0,       // pale cyan-green — visible on both land and ocean
+      transparent: true,
+      opacity: 0.32,
+      depthWrite: false,
+    }));
+    lines.renderOrder = 3;
+    globe.add(lines);
+
+    status.textContent = 'Coastlines loaded ✓ (' + topo.arcs.length + ' arcs, ' + (v.length / 6 | 0) + ' segments)';
+    setTimeout(() => status.style.opacity = '0', 3000);
+  })
+  .catch(err => {
+    status.textContent = 'Could not load coastlines: ' + err.message + ' (need an internet connection)';
+    status.style.color = '#f99';
+  });
+
+// ── Basic drag rotation ───────────────────────────────────────────────────────
+let isDragging = false, lastX = 0;
+renderer.domElement.addEventListener('pointerdown', e => { isDragging = true; lastX = e.clientX; });
+window.addEventListener('pointerup', () => { isDragging = false; });
+window.addEventListener('pointermove', e => {
+  if (!isDragging) return;
+  globe.rotation.y += (e.clientX - lastX) / 300;
+  lastX = e.clientX;
+});
+
+// ── Animation loop ────────────────────────────────────────────────────────────
+let last = performance.now();
+(function animate(now) {
+  requestAnimationFrame(animate);
+  if (!isDragging) globe.rotation.y += 0.3 * Math.min(0.05, (now - last) / 1000);
+  last = now;
+  renderer.render(scene, camera);
+})(performance.now());
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<!--
+  STEP 3 — Graticule and atmosphere glow
+  ========================================
+  Builds on Step 2.  New topics:
+    ll(lat, lon, r)  — converts geographic coordinates to 3-D Cartesian (the key helper)
+    LineSegments     — draws a set of unconnected line segments in one draw call
+    BufferGeometry   — the low-level geometry format; we fill it with raw Float32Arrays
+    ShaderMaterial   — custom GLSL vertex + fragment shaders for the atmosphere glow
+    AdditiveBlending — fragments are ADDED to what is already in the framebuffer (glow)
+    BackSide         — renders the inside of a sphere (for the outer halo shell)
+
+  The ll() function: converting lat/lon to 3-D
+  ─────────────────────────────────────────────
+  Three.js SphereGeometry uses a right-hand coordinate system where:
+    +Y points up (north pole)
+    +Z points toward the viewer at the start (prime meridian at the equator)
+    +X points right
+
+  For a point (lat°, lon°) on a sphere of radius r:
+    a = lat * π/180   (latitude in radians)
+    b = lon * π/180   (longitude in radians)
+    x =  cos(a) * cos(b) * r    ← east component
+    y =  sin(a)         * r    ← up component
+    z = -cos(a) * sin(b) * r    ← the minus makes lon increase eastward
+
+  The graticule is at radius 1.002 (just above the globe surface at radius 1)
+  so it does not fight the globe in the depth buffer.
+
+  The atmosphere shaders use the Fresnel effect:
+    The edge of a sphere (limb) is where the surface normal is perpendicular to
+    the view direction.  dot(normal, viewDir) ≈ 0 at the limb, ≈ 1 at the centre.
+    We want the OPPOSITE — bright at the edge, dim in the middle — so we use
+    (1 − dot(normal, viewDir)) and raise it to a power to control the width.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Step 3 — Graticule and Atmosphere</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000510; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.min.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const TEXTURE_URL = '../site/assets/blue_marble.jpg';
+const D2R = Math.PI / 180;  // degrees-to-radians conversion factor
+
+// ── ll(lat, lon, r) — the core coordinate helper ──────────────────────────────
+// Takes geographic coordinates (latitude, longitude in degrees) and a radius,
+// returns a [x, y, z] triple in Three.js's right-hand coordinate system.
+// All geometry in this tutorial is built from this single function.
+function ll(lat, lon, r) {
+  const a = lat * D2R;         // latitude in radians
+  const b = lon * D2R;         // longitude in radians
+  const c = Math.cos(a) * r;   // horizontal distance from Y axis at this latitude
+  return [
+    c * Math.cos(b),    // x — east component
+    Math.sin(a) * r,    // y — up component (north pole = +1 when r = 1)
+   -c * Math.sin(b),    // z — note the minus sign (see comment above)
+  ];
+}
+
+// ── Renderer, scene, camera ───────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0, 2.5);
+
+// ── Globe (from Step 2) ───────────────────────────────────────────────────────
+const globeMat = new THREE.MeshBasicMaterial({ color: 0x0b2238 });
+const globe = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 64), globeMat);
+scene.add(globe);
+new THREE.TextureLoader().load(TEXTURE_URL, tex => {
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  globeMat.map = tex; globeMat.color.setScalar(0.78); globeMat.needsUpdate = true;
+}, undefined, () => {});
+
+// ── Graticule ─────────────────────────────────────────────────────────────────
+// A graticule is the grid of latitude and longitude lines on a map.
+// We draw it at every 30° — that gives lines at ±60°, ±30°, 0° (equator)
+// and every 30° of longitude.
+//
+// Three.js LineSegments expects pairs of vertices: each pair is one segment.
+// We build a flat Float32Array of [x1,y1,z1, x2,y2,z2, x1,y1,z1, x2,y2,z2, …]
+// by sampling the great circle or parallel at small steps.
+{
+  const v = [];  // will hold all vertex positions
+
+  // Latitude parallels every 30° (from −60° to +60°; skip the poles)
+  for (let lat = -60; lat <= 60; lat += 30) {
+    for (let lon = -180; lon < 180; lon += 3) {
+      // Each iteration pushes one SEGMENT (two endpoints)
+      v.push(...ll(lat, lon,     1.002));  // start of segment
+      v.push(...ll(lat, lon + 3, 1.002));  // end of segment
+    }
+  }
+
+  // Longitude meridians every 30°
+  for (let lon = -180; lon < 180; lon += 30) {
+    for (let lat = -87; lat < 87; lat += 3) {
+      v.push(...ll(lat,     lon, 1.002));
+      v.push(...ll(lat + 3, lon, 1.002));
+    }
+  }
+
+  // Build the geometry from the raw vertex array
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));  // 3 values per vertex (xyz)
+
+  const mat = new THREE.LineBasicMaterial({
+    color: 0x9ccfe8,       // pale blue — blends with the ocean
+    transparent: true,
+    opacity: 0.18,
+    depthWrite: false,     // don't write to the depth buffer; avoids z-fighting
+  });
+
+  const lines = new THREE.LineSegments(geo, mat);
+  lines.renderOrder = 2;   // draw after the globe (renderOrder 0) so lines appear on top
+  globe.add(lines);        // add to globe so it rotates with it
+}
+
+// ── Atmosphere shaders ────────────────────────────────────────────────────────
+// Both the rim and the halo use the same vertex shader.
+// vN — the surface normal in VIEW space (after model and view transforms)
+// vP — the fragment position in VIEW space
+// In the fragment shader we compute dot(normalised normal, normalised -position)
+// which is essentially how much the surface faces the camera.
+const atmoVertex = `
+  varying vec3 vN;
+  varying vec3 vP;
+  void main() {
+    // normalMatrix transforms normals correctly when the model is non-uniformly scaled
+    vN = normalize(normalMatrix * normal);
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    vP = mv.xyz;
+    gl_Position = projectionMatrix * mv;
+  }
+`;
+
+// ── Atmosphere rim (surface glow) ─────────────────────────────────────────────
+// This sphere sits just outside the globe (radius 1.003).
+// At the limb of the globe, dot(vN, -vP_normalised) ≈ 0, so f ≈ 1 — bright.
+// At the centre of the globe from our viewpoint, the dot product ≈ 1, so f ≈ 0 — dark.
+// pow(f, 2.6) makes the glow fall off quickly so it only appears at the edges.
+const rimFragment = `
+  varying vec3 vN;
+  varying vec3 vP;
+  void main() {
+    // 1 − dot(normal, toward-camera) = 0 at centre, 1 at limb
+    float f = 1.0 - max(0.0, dot(normalize(vN), normalize(-vP)));
+    // pow tightens the glow to a thin rim; * 0.75 sets the max brightness
+    gl_FragColor = vec4(0.35, 0.68, 1.0, pow(f, 2.6) * 0.75);
+  }
+`;
+const rim = new THREE.Mesh(
+  new THREE.SphereGeometry(1.003, 96, 48),
+  new THREE.ShaderMaterial({
+    vertexShader: atmoVertex,
+    fragmentShader: rimFragment,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,  // the glow is ADDED to what is behind it
+  })
+);
+rim.renderOrder = 1;
+globe.add(rim);  // rotates with the globe
+
+// ── Outer halo ────────────────────────────────────────────────────────────────
+// The halo is a larger sphere (radius 1.2) rendered from the INSIDE (BackSide).
+// Because we render the inside, the depth ordering is naturally correct:
+// the halo appears behind the globe from the viewer's perspective.
+// The fragment shader uses -dot(...) (note the minus) so the glow is bright
+// at the limb when viewed from outside the sphere.
+const haloFragment = `
+  varying vec3 vN;
+  varying vec3 vP;
+  void main() {
+    // -dot gives a value near 0 at the globe's near-side, 1 at the limb from outside
+    float d = max(0.0, -dot(normalize(vN), normalize(-vP)));
+    gl_FragColor = vec4(0.22, 0.6, 1.0, pow(clamp(d * 1.8, 0.0, 1.0), 2.4) * 0.85);
+  }
+`;
+const halo = new THREE.Mesh(
+  new THREE.SphereGeometry(1.2, 96, 48),
+  new THREE.ShaderMaterial({
+    vertexShader: atmoVertex,
+    fragmentShader: haloFragment,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.BackSide,  // render only the inside faces
+  })
+);
+halo.renderOrder = 8;  // very high so it draws over everything
+scene.add(halo);       // in scene (not globe) because halo does NOT rotate
+
+// ── Basic drag rotation ───────────────────────────────────────────────────────
+let isDragging = false, lastX = 0;
+renderer.domElement.addEventListener('pointerdown', e => { isDragging = true; lastX = e.clientX; });
+window.addEventListener('pointerup', () => { isDragging = false; });
+window.addEventListener('pointermove', e => {
+  if (!isDragging) return;
+  globe.rotation.y += (e.clientX - lastX) / 300;
+  lastX = e.clientX;
+});
+
+// ── Animation loop ────────────────────────────────────────────────────────────
+let last = performance.now();
+(function animate(now) {
+  requestAnimationFrame(animate);
+  if (!isDragging) globe.rotation.y += 0.3 * Math.min(0.05, (now - last) / 1000);
+  last = now;
+  renderer.render(scene, camera);
+})(performance.now());
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>

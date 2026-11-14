@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!--
+  STEP 1 — A basic rotating sphere with Three.js
+  ================================================
+  Open this file directly in a browser. No build step needed.
+
+  What you will see: a plain blue sphere rotating slowly in the middle of a dark canvas.
+  This is the foundation everything else is built on.
+
+  Three.js concepts introduced:
+    WebGLRenderer   — the bridge between JavaScript and the GPU's WebGL API
+    Scene           — the 3-D container that holds every object
+    PerspectiveCamera — the virtual camera with a field of view and an aspect ratio
+    SphereGeometry  — a triangle mesh approximating a sphere
+    MeshBasicMaterial — a material that ignores lighting (always the same colour)
+    Mesh            — geometry + material combined into a renderable object
+    requestAnimationFrame — the browser's animation clock
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Step 1 — Basic Sphere</title>
+  <style>
+    /* Fill the whole browser window, no scrollbars, black background */
+    html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+
+<!-- Three.js is loaded from a CDN — no npm install required.
+     We pin to r168 (the same version used on the live site).
+     type="importmap" teaches the browser that "three" means this URL,
+     so we can write  import * as THREE from 'three'  below. -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.min.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ── 1. Renderer ──────────────────────────────────────────────────────────────
+// WebGLRenderer draws every frame onto a <canvas> element.
+// antialias: true — smooth edges (diagonal lines are not jagged)
+// alpha: true    — transparent background so the CSS body colour shows
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+
+// setClearColor(colour, opacity) — 0 opacity means fully transparent
+renderer.setClearColor(0x000000, 0);
+
+// Size the canvas to fill the window
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+// Respect high-DPI screens (Retina, 4K).  Clamped to 2× to avoid GPU overload.
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+// Attach the <canvas> element to the page
+document.body.appendChild(renderer.domElement);
+
+// ── 2. Scene ─────────────────────────────────────────────────────────────────
+// A Scene is the 3-D world.  Everything that should be rendered lives inside it.
+const scene = new THREE.Scene();
+
+// ── 3. Camera ────────────────────────────────────────────────────────────────
+// PerspectiveCamera(fov, aspect, near, far)
+//   fov    — vertical field of view in degrees; 45° feels natural, like a portrait lens
+//   aspect — width / height; must be updated when the window resizes
+//   near   — anything closer than 0.1 units is clipped (not drawn)
+//   far    — anything farther than 100 units is clipped
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+
+// Position the camera 2.5 units along the +Z axis, looking toward the origin (0,0,0).
+// Our globe will sit at the origin with radius 1, so the camera sees it from outside.
+camera.position.set(0, 0, 2.5);
+
+// ── 4. Globe geometry ────────────────────────────────────────────────────────
+// SphereGeometry(radius, widthSegments, heightSegments)
+//   radius         — 1 unit; we scale everything else relative to this
+//   widthSegments  — longitude slices; 64 gives smooth silhouette
+//   heightSegments — latitude rings; 32 is enough for a smooth surface
+const geometry = new THREE.SphereGeometry(1, 64, 32);
+
+// MeshBasicMaterial ignores all lights — it always shows the colour as-is.
+// This is perfect for a first step because there is no lighting to set up.
+const material = new THREE.MeshBasicMaterial({ color: 0x1a4a7a });  // deep ocean blue
+
+// A Mesh is geometry + material.  Add it to the scene so it gets rendered.
+const globe = new THREE.Mesh(geometry, material);
+scene.add(globe);
+
+// ── 5. Animation loop ────────────────────────────────────────────────────────
+// requestAnimationFrame asks the browser to call our function before the next paint.
+// At 60 fps this happens 60 times per second.  The browser passes the current
+// time (in milliseconds) as the argument so we can keep the rotation speed
+// independent of frame rate.
+
+let lastTime = performance.now();
+
+function animate(now) {
+  // Schedule the next frame FIRST so the loop keeps running even if this frame
+  // throws an error.
+  requestAnimationFrame(animate);
+
+  // dt = time elapsed since last frame, in seconds
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  // Rotate the globe around the Y axis (which points up).
+  // 0.3 radians per second is a gentle drift.
+  globe.rotation.y += 0.3 * dt;
+
+  // Render the scene from the camera's point of view
+  renderer.render(scene, camera);
+}
+
+requestAnimationFrame(animate);
+
+// ── 6. Handle window resize ──────────────────────────────────────────────────
+// Without this, the aspect ratio goes wrong when the window changes size.
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();  // must call this after changing camera properties
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>

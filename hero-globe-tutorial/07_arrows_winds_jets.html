@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<!--
+  STEP 7 — Direction arrows, trade winds, and jet streams
+  ========================================================
+  Builds on Step 6.  New topics:
+    Arrow triangles   — 3-vertex mesh, tangent + cross-product gives orientation
+    Trade winds       — grid of particles per hemisphere, drifting west + equatorward
+    Jet streams       — procedural sinusoidal meanders at high altitude (radius 1.035)
+
+  Direction arrows (how the geometry works)
+  ──────────────────────────────────────────
+  Each arrow is a small equilateral-ish triangle lying on the globe surface.
+  We need two vectors to define the triangle's orientation:
+    t̂ — the tangent of the path at this point (the direction of travel)
+    ŝ — the direction perpendicular to t̂, lying in the surface plane
+
+  To get ŝ:
+    P̂ = position on the globe, normalised to a unit vector (pointing radially outward)
+    ŝ = P̂ × t̂   (cross product)
+
+  P̂ × t̂ gives a vector perpendicular to BOTH the radial direction AND the tangent,
+  which means it lies in the surface plane and points "sideways" along the current.
+
+  Arrow vertices:
+    tip  = centre + t̂ * L * 0.6     (ahead of centre)
+    left = centre - t̂ * L * 0.4 + ŝ * AW  (back-left)
+    right= centre - t̂ * L * 0.4 - ŝ * AW  (back-right)
+
+  Trade winds
+  ───────────
+  Trade winds are surface winds that blow from the sub-tropics toward the equator,
+  deflected westward by the Coriolis effect:
+    Northern hemisphere: blow from NE toward SW (lat decreases, lon decreases)
+    Southern hemisphere: blow from SE toward NW (lat increases, lon decreases)
+
+  We model them as short streaks that:
+    - Start at a random latitude in the trade wind belt (10°–24° N or S)
+    - Drift westward at a fixed angular rate (TRADE.degPerSec)
+    - Drift equatorward (lat moves from latFrom toward latTo)
+    - Use a phase parameter t ∈ [0,1] that wraps around
+
+  Jet streams
+  ───────────
+  Polar jet streams are fast westerly winds at ~10 km altitude (tropopause).
+  They meander with large undulations (Rossby waves).  We model each meander as:
+    lat = centreLatitude + 8 * sin(4r + phase) + 3 * sin(2r)
+  where r is the longitude in radians.  Three overlapping meanders (with slightly
+  different amplitudes) give a natural-looking braid.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Step 7 — Arrows, Trade Winds, Jet Streams</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000510; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    #legend { position: fixed; bottom: 16px; left: 16px; color: #cef; font: 12px/1.8 monospace;
+              background: rgba(0,0,0,.55); padding: 8px 12px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+<div id="legend">
+  <span style="color:#f59e0b">→</span> Ocean currents (arrows)<br>
+  <span style="color:#fbbf24">·</span> Trade winds (belt particles)<br>
+  <span style="color:#fde9b0">~</span> Polar jet streams<br>
+  Drag to rotate
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.min.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const TEXTURE_URL = '../site/assets/blue_marble.jpg';
+const COAST_URL   = 'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json';
+const D2R = Math.PI / 180;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const smooth = (a, b, x) => { const t = clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+
+function ll(lat, lon, r) { const a=lat*D2R, b=lon*D2R, c=Math.cos(a)*r; return [c*Math.cos(b), Math.sin(a)*r, -c*Math.sin(b)]; }
+function cr(a,b,c,d,t) { return 0.5*(2*b+(c-a)*t+(2*a-5*b+4*c-d)*t*t+(3*b-a-3*c+d)*t*t*t); }
+function buildPath(pts, closed, radius) {
+  const P = pts.map(p=>[p[0],p[1]]);
+  for (let i=1;i<P.length;i++) { while(P[i][1]-P[i-1][1]>180)P[i][1]-=360; while(P[i][1]-P[i-1][1]<-180)P[i][1]+=360; }
+  const n=P.length, get=i=>{if(!closed)return P[clamp(i,0,n-1)];const q=P[((i%n)+n)%n];return[q[0],q[1]+360*Math.floor(i/n)];};
+  const raw=[],segs=closed?n:n-1,SUB=14;
+  for(let s=0;s<segs;s++){const a=get(s-1),b=get(s),c=get(s+1),d=get(s+2);for(let j=0;j<SUB;j++)raw.push(ll(cr(a[0],b[0],c[0],d[0],j/SUB),cr(a[1],b[1],c[1],d[1],j/SUB),radius));}
+  raw.push(closed?raw[0]:ll(P[n-1][0],P[n-1][1],radius));
+  const cum=[0];for(let i=1;i<raw.length;i++)cum.push(cum[i-1]+Math.hypot(raw[i][0]-raw[i-1][0],raw[i][1]-raw[i-1][1],raw[i][2]-raw[i-1][2]));
+  const len=cum[cum.length-1],m=Math.max(24,Math.ceil(len/0.008)),pos=new Float32Array((m+1)*3);
+  for(let i=0,k=0;i<=m;i++){const target=len*i/m;while(k<raw.length-2&&cum[k+1]<target)k++;const t=cum[k+1]>cum[k]?clamp((target-cum[k])/(cum[k+1]-cum[k]),0,1):0;for(let c=0;c<3;c++)pos[i*3+c]=raw[k][c]+(raw[k+1][c]-raw[k][c])*t;}
+  return{pos,m,len,closed};
+}
+function samplePath(path,s,out,o){const f=clamp(s,0,1)*path.m,i=Math.min(Math.floor(f),path.m-1),t=f-i,p=path.pos;out[o]=p[i*3]+(p[i*3+3]-p[i*3])*t;out[o+1]=p[i*3+1]+(p[i*3+4]-p[i*3+1])*t;out[o+2]=p[i*3+2]+(p[i*3+5]-p[i*3+2])*t;}
+
+// ── Renderer, scene, camera ───────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0, 2.5);
+const spin = new THREE.Group(); scene.add(spin);
+
+const globeMat = new THREE.MeshBasicMaterial({ color: 0x0b2238 });
+spin.add(new THREE.Mesh(new THREE.SphereGeometry(1,128,64), globeMat));
+new THREE.TextureLoader().load(TEXTURE_URL, tex=>{tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());globeMat.map=tex;globeMat.color.setScalar(0.78);globeMat.needsUpdate=true;},undefined,()=>{});
+{const v=[];for(let lat=-60;lat<=60;lat+=30)for(let lon=-180;lon<180;lon+=3){v.push(...ll(lat,lon,1.002));v.push(...ll(lat,lon+3,1.002));}for(let lon=-180;lon<180;lon+=30)for(let lat=-87;lat<87;lat+=3){v.push(...ll(lat,lon,1.002));v.push(...ll(lat+3,lon,1.002));}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));spin.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x9ccfe8,transparent:true,opacity:0.13,depthWrite:false})));}
+const atmoVS='varying vec3 vN; varying vec3 vP; void main() { vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vP = mv.xyz; gl_Position = projectionMatrix * mv; }';
+spin.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(1.003,96,48),new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:'varying vec3 vN; varying vec3 vP; void main() { float f = 1.0 - max(0.0, dot(normalize(vN), normalize(-vP))); gl_FragColor = vec4(0.35, 0.68, 1.0, pow(f, 2.6) * 0.75); }',transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})),{renderOrder:1}));
+scene.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(1.2,96,48),new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:'varying vec3 vN; varying vec3 vP; void main() { float d = max(0.0, -dot(normalize(vN), normalize(-vP))); gl_FragColor = vec4(0.22, 0.6, 1.0, pow(clamp(d * 1.8, 0.0, 1.0), 2.4) * 0.85); }',transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.BackSide})),{renderOrder:8}));
+fetch(COAST_URL).then(r=>r.ok?r.json():Promise.reject()).then(topo=>{const sc=topo.transform.scale,tr=topo.transform.translate,v=[];for(const arc of topo.arcs){let x=0,y=0,prev=null;for(const d of arc){x+=d[0];y+=d[1];const p=ll(y*sc[1]+tr[1],x*sc[0]+tr[0],1.003);if(prev)v.push(prev[0],prev[1],prev[2],p[0],p[1],p[2]);prev=p;}}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));spin.add(Object.assign(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x8ff0e0,transparent:true,opacity:0.32,depthWrite:false})),{renderOrder:3}));}).catch(()=>{});
+
+// ── Ocean current data (3 currents for brevity) ───────────────────────────────
+const FLOWS_DATA = [
+  {name:'Gulf Stream',color:'#f59e0b',speed:0.10,pts:[[24.2,-81.5],[26,-79.7],[30,-79.5],[33,-77],[35.5,-74.3],[38,-70],[39.5,-64],[40.5,-57],[42,-50],[45,-43],[48,-36]]},
+  {name:'Kuroshio Current',color:'#22d3ee',speed:0.09,pts:[[16,123.8],[20,122.6],[24,122.8],[27,125.8],[29.5,129.5],[31.5,132.5],[33,136],[34.3,139.5],[35.3,142],[36,147],[35.5,153],[36.5,160],[37.5,168]]},
+  {name:'Antarctic Circumpolar',color:'#60a5fa',speed:0.05,closed:true,pts:[[-58,-180],[-59,-160],[-60,-140],[-60,-120],[-60,-100],[-60,-80],[-59,-65],[-56,-55],[-52,-40],[-50,-20],[-50,0],[-49,20],[-48,40],[-48,60],[-50,80],[-51,100],[-53,120],[-55,140],[-57,160]]},
+];
+
+// ── Jet stream paths (procedural sinusoidal meanders) ────────────────────────
+const JET_DESC = 'Fast westerly winds near 10 km altitude that meander around the globe.';
+// Three overlapping meanders per hemisphere, slightly different phases and amplitudes
+[[-3, 0.92], [0, 1], [3, 0.92]].forEach(([dLat, gain]) => {
+  const north = [], south = [];
+  for (let lon = -180; lon < 180; lon += 10) {
+    const r = lon * Math.PI / 180;
+    // Large meander (amplitude 8°) with a faster harmonic (amplitude 3°)
+    north.push([49 + dLat + 8 * Math.sin(4 * r + 0.6) + 3 * Math.sin(2 * r), lon]);
+    south.push([-51 + dLat + 5 * Math.sin(3 * r + 1.2), lon]);
+  }
+  FLOWS_DATA.push({name:'Polar jet stream', desc: JET_DESC, color:'#fde9b0', speed:0.3, closed:true, jet:true, gain, pts:north});
+  FLOWS_DATA.push({name:'Polar jet stream', desc: JET_DESC, color:'#fde9b0', speed:0.3, closed:true, jet:true, gain, pts:south});
+});
+
+const scaleU = { value: Math.min(window.devicePixelRatio, 2) };
+function makePointMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms:{uScale:scaleU},
+    vertexShader:'attribute float aSize; attribute float aAlpha; attribute vec3 aColor; uniform float uScale; varying float vA; varying vec3 vC; void main() { vA = aAlpha; vC = aColor; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_PointSize = aSize * uScale; }',
+    fragmentShader:'varying float vA; varying vec3 vC; void main() { float d = length(gl_PointCoord - 0.5) * 2.0; float a = pow(max(0.0, 1.0 - d), 1.8); gl_FragColor = vec4(vC, vA * a); #include <colorspace_fragment> }',
+    transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
+  });
+}
+function makePoints(n,order,parent) {
+  const g=new THREE.BufferGeometry(),pos=new Float32Array(n*3),col=new Float32Array(n*3),size=new Float32Array(n),alpha=new Float32Array(n);
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3).setUsage(THREE.DynamicDrawUsage));
+  g.setAttribute('aColor',new THREE.BufferAttribute(col,3));
+  g.setAttribute('aSize',new THREE.BufferAttribute(size,1));
+  g.setAttribute('aAlpha',new THREE.BufferAttribute(alpha,1).setUsage(THREE.DynamicDrawUsage));
+  const pts=new THREE.Points(g,makePointMaterial());pts.frustumCulled=false;pts.renderOrder=order;parent.add(pts);
+  return{g,pos,col,size,alpha};
+}
+
+const TAIL=14;
+const tailFall=Array.from({length:TAIL},(_,k)=>k===0?1:Math.pow(1-k/TAIL,1.3)*0.9);
+let seed=42;const rand=()=>{seed=(seed*1664525+1013904223)&0xffffffff;return(seed>>>0)/4294967296;};
+
+let totalPts=0, nArrows=0;
+const flows=FLOWS_DATA.map(f=>{
+  const path=buildPath(f.pts,!!f.closed,f.jet?1.035:1.007);
+  const n=Math.max(3,Math.round(path.len/(f.jet?0.2:0.085)));
+  const tailLen=f.jet?0.16:0.028+f.speed*0.32;
+  const tailStep=tailLen/TAIL/path.len;
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(path.pos,3));
+  const line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:new THREE.Color(f.color),transparent:true,opacity:f.jet?0.14:0.28,depthWrite:false,blending:THREE.AdditiveBlending}));
+  line.renderOrder=4;spin.add(line);
+  const phases=Array.from({length:n},(_,i)=>(i+(rand()-0.5)*0.5)/n);
+  const arrows=f.jet?(f.gain===1?4:0):Math.max(1,Math.round(path.len/0.9));
+  const fl={f,path,n,color:new THREE.Color(f.color),phases,tailStep,offset:totalPts,arrows,arrowOffset:nArrows};
+  totalPts+=n*TAIL; nArrows+=arrows;
+  return fl;
+});
+
+const flowPts=makePoints(totalPts,6,spin);
+for(const fl of flows){for(let p=0;p<fl.n;p++)for(let k=0;k<TAIL;k++){const i=fl.offset+p*TAIL+k;flowPts.col.set([fl.color.r,fl.color.g,fl.color.b],i*3);flowPts.size[i]=(k===0?8:5.2-3.4*k/TAIL)*(fl.f.jet?0.8:1);}}
+
+// ── Direction arrow mesh ──────────────────────────────────────────────────────
+// nArrows triangles × 3 vertices = nArrows*9 floats for position, same for colour
+const arrowPos   = new Float32Array(nArrows * 9);
+const arrowCol   = new Float32Array(nArrows * 9);
+const arrowAlpha = new Float32Array(nArrows * 3);  // one alpha value per vertex (3 per triangle)
+const arrowGeo   = new THREE.BufferGeometry();
+arrowGeo.setAttribute('position', new THREE.BufferAttribute(arrowPos, 3).setUsage(THREE.DynamicDrawUsage));
+arrowGeo.setAttribute('aColor',   new THREE.BufferAttribute(arrowCol, 3));
+arrowGeo.setAttribute('aAlpha',   new THREE.BufferAttribute(arrowAlpha, 1).setUsage(THREE.DynamicDrawUsage));
+
+// Pre-set arrow colours (lighter than the current colour)
+flows.forEach(fl => {
+  const c = fl.color.clone().lerp(new THREE.Color(0xffffff), 0.55);
+  for (let a = 0; a < fl.arrows * 3; a++) arrowCol.set([c.r, c.g, c.b], (fl.arrowOffset * 3 + a) * 3);
+});
+
+const arrowMesh = new THREE.Mesh(arrowGeo, new THREE.ShaderMaterial({
+  vertexShader: 'attribute vec3 aColor; attribute float aAlpha; varying vec3 vC; varying float vA; void main() { vC = aColor; vA = aAlpha; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: 'varying vec3 vC; varying float vA; void main() { gl_FragColor = vec4(vC, vA); #include <colorspace_fragment> }',
+  transparent: true, depthWrite: false, side: THREE.DoubleSide,
+}));
+arrowMesh.frustumCulled = false; arrowMesh.renderOrder = 7; spin.add(arrowMesh);
+
+// Temporary arrays for samplePath output (avoid allocation inside the loop)
+const tmpA = [0, 0, 0], tmpB = [0, 0, 0];
+
+// ── Trade winds ───────────────────────────────────────────────────────────────
+const TRADE = { color: '#fbbf24', degPerSec: 18, latFrom: 24, latTo: 10, dLon: 40 };
+const TT = 9;  // tail segments per trade wind streak
+const tradeColor = new THREE.Color(TRADE.color);
+const trades = [];
+for (const hemi of [1, -1]) {
+  for (let row = 0; row < 2; row++) {
+    for (let lon = -180; lon < 180; lon += 5) {
+      trades.push({
+        hemi,
+        lon: lon + row * 2.5 + (rand() - 0.5) * 2,
+        lat0: TRADE.latFrom - row * 5 + (rand() - 0.5) * 3,
+        phase: rand(),
+      });
+    }
+  }
+}
+const tradePts = makePoints(trades.length * TT, 5, spin);
+for (let i = 0; i < trades.length * TT; i++) {
+  const k = i % TT;
+  tradePts.col.set([tradeColor.r, tradeColor.g, tradeColor.b], i * 3);
+  tradePts.size[i] = k === 0 ? 4.2 : 3.4 - 1.8 * k / TT;
+}
+
+// ── updateAll(time) ───────────────────────────────────────────────────────────
+function updateAll(time) {
+  for (const fl of flows) {
+    const path = fl.path, adv = time * fl.f.speed / path.len, gain = fl.f.gain || 1;
+    for (let p = 0; p < fl.n; p++) {
+      let s0 = (fl.phases[p] + adv) % 1; if (s0 < 0) s0 += 1;
+      for (let k = 0; k < TAIL; k++) {
+        const i = fl.offset + p * TAIL + k; let s = s0 - k * fl.tailStep, a = tailFall[k] * gain;
+        if (path.closed) s -= Math.floor(s);
+        else if (s < 0) { s = 0; a = 0; } else a *= smooth(0, 0.1, s) * (1 - smooth(0.9, 1, s));
+        samplePath(path, s, flowPts.pos, i * 3); flowPts.alpha[i] = a;
+      }
+    }
+
+    // ── Arrow geometry update ─────────────────────────────────────────────────
+    // Arrow size: L = length, AW = half-width
+    const L = fl.f.jet ? 0.032 : 0.026, AW = L * 0.4;
+    for (let a = 0; a < fl.arrows; a++) {
+      const s = ((a + 0.5) / fl.arrows + adv * 0.4) % 1;
+      const fade = path.closed ? 1 : smooth(0.04, 0.22, s) * (1 - smooth(0.78, 0.96, s));
+      const ds = L / path.len;
+      samplePath(path, clamp(s - ds * 0.5, 0, 1), tmpA, 0);
+      samplePath(path, clamp(s + ds * 0.5, 0, 1), tmpB, 0);
+
+      // t̂ = tangent direction (normalise the difference vector)
+      let tx = tmpB[0]-tmpA[0], ty = tmpB[1]-tmpA[1], tz = tmpB[2]-tmpA[2];
+      const tl = Math.hypot(tx,ty,tz)||1; tx/=tl; ty/=tl; tz/=tl;
+
+      // Centre point of the arrow
+      const cx=(tmpA[0]+tmpB[0])/2, cy=(tmpA[1]+tmpB[1])/2, cz=(tmpA[2]+tmpB[2])/2;
+
+      // ŝ = P̂ × t̂ (cross product of position and tangent → surface-perpendicular)
+      // This gives us the sideways direction in the surface plane
+      let sx=cy*tz-cz*ty, sy=cz*tx-cx*tz, sz=cx*ty-cy*tx;
+      const sl=Math.hypot(sx,sy,sz)||1; sx/=sl; sy/=sl; sz/=sl;
+
+      const o = (fl.arrowOffset + a) * 9;
+      const lift = 1.004;  // slight offset above path lines
+      // Tip vertex
+      arrowPos[o  ]=(cx+tx*L*0.6)*lift; arrowPos[o+1]=(cy+ty*L*0.6)*lift; arrowPos[o+2]=(cz+tz*L*0.6)*lift;
+      // Left base vertex
+      arrowPos[o+3]=(cx-tx*L*0.4+sx*AW)*lift; arrowPos[o+4]=(cy-ty*L*0.4+sy*AW)*lift; arrowPos[o+5]=(cz-tz*L*0.4+sz*AW)*lift;
+      // Right base vertex
+      arrowPos[o+6]=(cx-tx*L*0.4-sx*AW)*lift; arrowPos[o+7]=(cy-ty*L*0.4-sy*AW)*lift; arrowPos[o+8]=(cz-tz*L*0.4-sz*AW)*lift;
+
+      // Alpha pulses slightly to give the arrows a living feel
+      const al = fade * (0.8 + 0.2 * Math.sin(time * 2.4 + a));
+      const ao = (fl.arrowOffset + a) * 3;
+      arrowAlpha[ao] = arrowAlpha[ao+1] = arrowAlpha[ao+2] = al;
+    }
+  }
+  flowPts.g.attributes.position.needsUpdate = true; flowPts.g.attributes.aAlpha.needsUpdate = true;
+  arrowGeo.attributes.position.needsUpdate = true; arrowGeo.attributes.aAlpha.needsUpdate = true;
+
+  // ── Trade wind update ─────────────────────────────────────────────────────
+  const rate = TRADE.degPerSec / TRADE.dLon;
+  const dLat = TRADE.latFrom - TRADE.latTo;
+  for (let j = 0; j < trades.length; j++) {
+    const tw = trades[j], t0 = (tw.phase + time * rate) % 1;
+    for (let k = 0; k < TT; k++) {
+      const i = j * TT + k, t = t0 - k * 0.016;
+      if (t < 0) { tradePts.alpha[i] = 0; continue; }
+      // tw.hemi is +1 (north) or -1 (south)
+      // Northern hemisphere: lat decreases from lat0 (northward start) toward 10°N
+      // Southern hemisphere: lat increases from -lat0 toward -10°S
+      tradePts.pos.set(ll(tw.hemi * (tw.lat0 - dLat * t), tw.lon - TRADE.dLon * t, 1.012), i * 3);
+      // Sine envelope: fade in at t=0, peak at t=0.5, fade out at t=1
+      tradePts.alpha[i] = Math.sin(Math.PI * t) * Math.pow(1 - k / TT, 1.4) * 0.8;
+    }
+  }
+  tradePts.g.attributes.position.needsUpdate = true; tradePts.g.attributes.aAlpha.needsUpdate = true;
+}
+
+// ── Drag + loop ───────────────────────────────────────────────────────────────
+let isDragging = false, lastX = 0;
+renderer.domElement.addEventListener('pointerdown', e=>{isDragging=true;lastX=e.clientX;});
+window.addEventListener('pointerup', ()=>{isDragging=false;});
+window.addEventListener('pointermove', e=>{if(!isDragging)return;spin.rotation.y+=(e.clientX-lastX)/300;lastX=e.clientX;});
+
+let last = performance.now(), time = 0;
+(function animate(now) {
+  requestAnimationFrame(animate);
+  const dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(!isDragging)spin.rotation.y+=0.3*dt;
+  time+=dt; updateAll(time);
+  renderer.render(scene, camera);
+})(performance.now());
+
+window.addEventListener('resize', ()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);scaleU.value=Math.min(window.devicePixelRatio,2);});
+</script>
+
+</body>
+</html>

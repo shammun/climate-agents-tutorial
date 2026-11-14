@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<!--
+  STEP 6 — Animated glowing particles with fading tails
+  ======================================================
+  Builds on Step 5.  New topics:
+    Custom ShaderMaterial   — point shader that draws a soft circular glow
+    DynamicDrawUsage        — tells the GPU this buffer changes every frame
+    samplePath()            — fast lookup of a 3-D position at fraction s
+    TAIL system             — each logical particle = TAIL GPU points, fading
+    Phase staggering        — particles start at evenly-distributed offsets
+    uScale uniform          — device-pixel-ratio-aware point size
+
+  The glow point shader
+  ─────────────────────
+  Three.js Points renders each vertex as a square sprite (gl_PointSize × gl_PointSize pixels).
+  Inside the fragment shader, gl_PointCoord gives the UV position within that square: (0,0)
+  is the top-left corner, (1,1) is the bottom-right, (0.5, 0.5) is the centre.
+
+  To make a soft circular glow:
+    d = length(gl_PointCoord - 0.5) * 2    // 0 at centre, 1 at edge of sprite
+    a = pow(max(0, 1 - d), 1.8)             // 1 at centre, 0 at edge, power controls softness
+
+  Combined with AdditiveBlending and an alpha attribute, overlapping tails sum
+  into a bright streak.
+
+  The TAIL trick
+  ──────────────
+  Instead of one GPU point per particle, we use TAIL=14 points arranged in a
+  trailing line behind the head.  The head (index k=0) has full brightness;
+  tail points fade with tailFall[k] = (1 - k/TAIL)^1.3 * 0.9.
+
+  Every frame we write TAIL positions for each particle to the shared buffer:
+    - head at phase s0
+    - each tail point k at s0 - k * tailStep (a fixed arc-length step backward)
+
+  When s < 0 on an open path we set alpha to 0 (the particle hasn't started yet),
+  and when s > 1 we set alpha to 0 (it has gone past the end).  On closed paths
+  we wrap s modulo 1.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Step 6 — Animated Particles</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000510; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.min.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const TEXTURE_URL = '../site/assets/blue_marble.jpg';
+const COAST_URL   = 'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json';
+const D2R = Math.PI / 180;
+
+function ll(lat, lon, r) { const a = lat*D2R, b = lon*D2R, c = Math.cos(a)*r; return [c*Math.cos(b), Math.sin(a)*r, -c*Math.sin(b)]; }
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const smooth = (a, b, x) => { const t = clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+
+function cr(a, b, c, d, t) {
+  return 0.5 * (2*b + (c-a)*t + (2*a-5*b+4*c-d)*t*t + (3*b-a-3*c+d)*t*t*t);
+}
+
+function buildPath(pts, closed, radius) {
+  const P = pts.map(p => [p[0], p[1]]);
+  for (let i = 1; i < P.length; i++) {
+    while (P[i][1] - P[i-1][1] > 180) P[i][1] -= 360;
+    while (P[i][1] - P[i-1][1] < -180) P[i][1] += 360;
+  }
+  const n = P.length;
+  const get = i => { if (!closed) return P[clamp(i,0,n-1)]; const q = P[((i%n)+n)%n]; return [q[0], q[1]+360*Math.floor(i/n)]; };
+  const raw = [], segs = closed ? n : n - 1, SUB = 14;
+  for (let s = 0; s < segs; s++) {
+    const a = get(s-1), b = get(s), c = get(s+1), d = get(s+2);
+    for (let j = 0; j < SUB; j++) raw.push(ll(cr(a[0],b[0],c[0],d[0],j/SUB), cr(a[1],b[1],c[1],d[1],j/SUB), radius));
+  }
+  raw.push(closed ? raw[0] : ll(P[n-1][0], P[n-1][1], radius));
+  const cum = [0];
+  for (let i = 1; i < raw.length; i++) cum.push(cum[i-1] + Math.hypot(raw[i][0]-raw[i-1][0], raw[i][1]-raw[i-1][1], raw[i][2]-raw[i-1][2]));
+  const len = cum[cum.length-1], m = Math.max(24, Math.ceil(len/0.008));
+  const pos = new Float32Array((m+1)*3);
+  for (let i = 0, k = 0; i <= m; i++) {
+    const target = len*i/m;
+    while (k < raw.length-2 && cum[k+1] < target) k++;
+    const t = cum[k+1] > cum[k] ? clamp((target-cum[k])/(cum[k+1]-cum[k]),0,1) : 0;
+    for (let c = 0; c < 3; c++) pos[i*3+c] = raw[k][c] + (raw[k+1][c] - raw[k][c]) * t;
+  }
+  return { pos, m, len, closed };
+}
+
+// ── samplePath(path, s, out, offset) ─────────────────────────────────────────
+// Writes the 3-D position at arc-fraction s ∈ [0,1] into out[offset..offset+2].
+// s is clamped and linearly interpolated between adjacent resampled points.
+// This is called TAIL times per particle per frame, so it must be fast —
+// no allocation, just array index arithmetic.
+function samplePath(path, s, out, o) {
+  const f = clamp(s, 0, 1) * path.m;
+  const i = Math.min(Math.floor(f), path.m - 1);
+  const t = f - i;
+  const p = path.pos;
+  out[o]   = p[i*3]   + (p[i*3+3] - p[i*3])   * t;
+  out[o+1] = p[i*3+1] + (p[i*3+4] - p[i*3+1]) * t;
+  out[o+2] = p[i*3+2] + (p[i*3+5] - p[i*3+2]) * t;
+}
+
+// ── Renderer, scene, camera ───────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0, 2.5);
+const spin = new THREE.Group(); scene.add(spin);
+
+// ── Globe + graticule + atmosphere + coastlines (abbreviated from previous steps) ──
+const globeMat = new THREE.MeshBasicMaterial({ color: 0x0b2238 });
+spin.add(new THREE.Mesh(new THREE.SphereGeometry(1, 128, 64), globeMat));
+new THREE.TextureLoader().load(TEXTURE_URL, tex => { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); globeMat.map = tex; globeMat.color.setScalar(0.78); globeMat.needsUpdate = true; }, undefined, () => {});
+{
+  const v = [];
+  for (let lat=-60; lat<=60; lat+=30) for (let lon=-180; lon<180; lon+=3) { v.push(...ll(lat,lon,1.002)); v.push(...ll(lat,lon+3,1.002)); }
+  for (let lon=-180; lon<180; lon+=30) for (let lat=-87; lat<87; lat+=3) { v.push(...ll(lat,lon,1.002)); v.push(...ll(lat+3,lon,1.002)); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+  spin.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x9ccfe8, transparent: true, opacity: 0.13, depthWrite: false })));
+}
+const atmoVS = 'varying vec3 vN; varying vec3 vP; void main() { vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vP = mv.xyz; gl_Position = projectionMatrix * mv; }';
+spin.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(1.003, 96, 48), new THREE.ShaderMaterial({ vertexShader: atmoVS, fragmentShader: 'varying vec3 vN; varying vec3 vP; void main() { float f = 1.0 - max(0.0, dot(normalize(vN), normalize(-vP))); gl_FragColor = vec4(0.35, 0.68, 1.0, pow(f, 2.6) * 0.75); }', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })), { renderOrder: 1 }));
+scene.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(1.2, 96, 48), new THREE.ShaderMaterial({ vertexShader: atmoVS, fragmentShader: 'varying vec3 vN; varying vec3 vP; void main() { float d = max(0.0, -dot(normalize(vN), normalize(-vP))); gl_FragColor = vec4(0.22, 0.6, 1.0, pow(clamp(d * 1.8, 0.0, 1.0), 2.4) * 0.85); }', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.BackSide })), { renderOrder: 8 }));
+fetch(COAST_URL).then(r => r.ok ? r.json() : Promise.reject()).then(topo => {
+  const sc = topo.transform.scale, tr = topo.transform.translate, v = [];
+  for (const arc of topo.arcs) { let x=0,y=0,prev=null; for (const d of arc) { x+=d[0]; y+=d[1]; const p=ll(y*sc[1]+tr[1],x*sc[0]+tr[0],1.003); if(prev) v.push(prev[0],prev[1],prev[2],p[0],p[1],p[2]); prev=p; } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+  spin.add(Object.assign(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x8ff0e0, transparent: true, opacity: 0.32, depthWrite: false })), { renderOrder: 3 }));
+}).catch(() => {});
+
+// ── OCEAN CURRENT DATA ────────────────────────────────────────────────────────
+const FLOWS_DATA = [
+  { name: 'Gulf Stream',      color: '#f59e0b', speed: 0.10, pts: [[24.2,-81.5],[26,-79.7],[30,-79.5],[33,-77],[35.5,-74.3],[38,-70],[39.5,-64],[40.5,-57],[42,-50],[45,-43],[48,-36]] },
+  { name: 'Kuroshio Current', color: '#22d3ee', speed: 0.09, pts: [[16,123.8],[20,122.6],[24,122.8],[27,125.8],[29.5,129.5],[31.5,132.5],[33,136],[34.3,139.5],[35.3,142],[36,147],[35.5,153],[36.5,160],[37.5,168]] },
+  { name: 'Antarctic Circumpolar Current', color: '#60a5fa', speed: 0.05, closed: true, pts: [[-58,-180],[-59,-160],[-60,-140],[-60,-120],[-60,-100],[-60,-80],[-59,-65],[-56,-55],[-52,-40],[-50,-20],[-50,0],[-49,20],[-48,40],[-48,60],[-50,80],[-51,100],[-53,120],[-55,140],[-57,160]] },
+];
+
+// ── Shared glowing-point material ─────────────────────────────────────────────
+// uScale is a shared uniform — when the window or pixel ratio changes we update
+// this once and all Points objects get the new size automatically.
+const scaleU = { value: Math.min(window.devicePixelRatio, 2) };
+
+function makePointMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: { uScale: scaleU },
+    vertexShader: [
+      // Per-vertex attributes: size, alpha, RGB colour
+      'attribute float aSize; attribute float aAlpha; attribute vec3 aColor;',
+      'uniform float uScale; varying float vA; varying vec3 vC;',
+      'void main() {',
+      '  vA = aAlpha; vC = aColor;',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+      // gl_PointSize is in PHYSICAL pixels.  aSize is in logical pixels.
+      // Multiplying by uScale (the device pixel ratio) keeps visual size consistent.
+      '  gl_PointSize = aSize * uScale;',
+      '}',
+    ].join('\n'),
+    fragmentShader: [
+      'varying float vA; varying vec3 vC;',
+      'void main() {',
+      // gl_PointCoord is (0,0) at the top-left corner of the sprite, (1,1) at bottom-right
+      // We compute distance from the CENTRE (0.5, 0.5), scaled to [0,1]
+      '  float d = length(gl_PointCoord - 0.5) * 2.0;',
+      // Soft circular glow: 1 at the centre, 0 at the edge, power controls softness
+      '  float a = pow(max(0.0, 1.0 - d), 1.8);',
+      '  gl_FragColor = vec4(vC, vA * a);',
+      // colorspace_fragment converts output to sRGB for correct colour display
+      '  #include <colorspace_fragment>',
+      '}',
+    ].join('\n'),
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,  // brightness ADDS up for overlapping tails
+  });
+}
+
+// makePoints(n, renderOrder, parent) — allocates a Points object for n vertices
+// Returns { g, pos, col, size, alpha } where each is a typed array view
+function makePoints(n, order, parent) {
+  const g = new THREE.BufferGeometry();
+  const pos   = new Float32Array(n * 3);
+  const col   = new Float32Array(n * 3);
+  const size  = new Float32Array(n);
+  const alpha = new Float32Array(n);
+  g.setAttribute('position', new THREE.BufferAttribute(pos,   3).setUsage(THREE.DynamicDrawUsage));
+  g.setAttribute('aColor',   new THREE.BufferAttribute(col,   3));
+  g.setAttribute('aSize',    new THREE.BufferAttribute(size,  1));
+  g.setAttribute('aAlpha',   new THREE.BufferAttribute(alpha, 1).setUsage(THREE.DynamicDrawUsage));
+  const pts = new THREE.Points(g, makePointMaterial());
+  pts.frustumCulled = false;  // skip bounding-box culling; paths wrap the globe
+  pts.renderOrder = order;
+  parent.add(pts);
+  return { g, pos, col, size, alpha };
+}
+
+// ── Build flow data ────────────────────────────────────────────────────────────
+const TAIL = 14;  // number of GPU points per logical particle (1 head + 13 tail)
+
+// Pre-compute the alpha fade for each tail position.
+// tailFall[0] = 1   (head, full brightness)
+// tailFall[13] ≈ 0  (tip of tail, nearly invisible)
+const tailFall = Array.from({ length: TAIL }, (_, k) =>
+  k === 0 ? 1 : Math.pow(1 - k / TAIL, 1.3) * 0.9
+);
+
+// Deterministic pseudo-random for reproducible staggering
+let seed = 42;
+const rand = () => { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 4294967296; };
+
+let totalPts = 0;
+const flows = FLOWS_DATA.map(f => {
+  const path = buildPath(f.pts, !!f.closed, 1.007);
+
+  // number of particles: enough for one per 0.085 units of arc length
+  const n = Math.max(3, Math.round(path.len / 0.085));
+
+  // tailStep: how far BACK (in arc-fraction units) each successive tail point is
+  // tailLen is how long the visible tail is in arc units; shorter = crisper
+  const tailLen = 0.028 + f.speed * 0.32;
+  const tailStep = tailLen / TAIL / path.len;
+
+  // Draw the path line so users can see the route even before particles arrive
+  {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(path.pos, 3));
+    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({
+      color: new THREE.Color(f.color), transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending }));
+    line.renderOrder = 4; spin.add(line);
+  }
+
+  // Stagger phases so particles are evenly distributed along the path at t=0.
+  // A small jitter (±0.5/n) prevents exact regularity which looks artificial.
+  const phases = Array.from({ length: n }, (_, i) => (i + (rand() - 0.5) * 0.5) / n);
+
+  return { f, path, n, color: new THREE.Color(f.color), phases, tailStep, offset: totalPts };
+  totalPts += n * TAIL;
+  return flows[flows.length - 1];  // workaround: totalPts is incremented after return
+});
+
+// Recalculate offsets correctly (the closure above was post-increment)
+let runningOffset = 0;
+for (const fl of flows) { fl.offset = runningOffset; runningOffset += fl.n * TAIL; }
+totalPts = runningOffset;
+
+const flowPts = makePoints(totalPts, 6, spin);
+
+// Set per-vertex colours and sizes (these never change, only positions and alphas do)
+for (const fl of flows) {
+  for (let p = 0; p < fl.n; p++) {
+    for (let k = 0; k < TAIL; k++) {
+      const i = fl.offset + p * TAIL + k;
+      flowPts.col.set([fl.color.r, fl.color.g, fl.color.b], i * 3);
+      // Head point is bigger; tail shrinks toward zero
+      flowPts.size[i] = k === 0 ? 8 : 5.2 - 3.4 * k / TAIL;
+    }
+  }
+}
+
+// ── updateFlows(time) — called every frame ───────────────────────────────────
+function updateFlows(time) {
+  for (const fl of flows) {
+    const path = fl.path;
+    const adv = time * fl.f.speed / path.len;  // how far each particle has advanced (arc-fraction)
+
+    for (let p = 0; p < fl.n; p++) {
+      // Current head position: phase[p] is the stagger offset, adv is time progression
+      let s0 = (fl.phases[p] + adv) % 1;
+      if (s0 < 0) s0 += 1;
+
+      for (let k = 0; k < TAIL; k++) {
+        const i = fl.offset + p * TAIL + k;
+        let s = s0 - k * fl.tailStep;  // tail points are progressively BEHIND the head
+        let a = tailFall[k];            // base alpha for this tail position
+
+        if (path.closed) {
+          // Closed path: wrap s to [0,1]
+          s -= Math.floor(s);
+        } else {
+          // Open path: fade in at the start (s < 0.1) and fade out at the end (s > 0.9)
+          // This prevents sudden pop-in/pop-out at the path endpoints
+          if (s < 0) { s = 0; a = 0; }
+          else a *= smooth(0, 0.1, s) * (1 - smooth(0.9, 1, s));
+        }
+
+        samplePath(path, s, flowPts.pos, i * 3);
+        flowPts.alpha[i] = a;
+      }
+    }
+  }
+
+  // After writing all positions and alphas, tell Three.js to upload the changes
+  flowPts.g.attributes.position.needsUpdate = true;
+  flowPts.g.attributes.aAlpha.needsUpdate   = true;
+}
+
+// ── Drag + animation loop ─────────────────────────────────────────────────────
+let isDragging = false, lastX = 0;
+renderer.domElement.addEventListener('pointerdown', e => { isDragging = true; lastX = e.clientX; });
+window.addEventListener('pointerup', () => { isDragging = false; });
+window.addEventListener('pointermove', e => { if (!isDragging) return; spin.rotation.y += (e.clientX - lastX) / 300; lastX = e.clientX; });
+
+let last = performance.now(), time = 0;
+(function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!isDragging) spin.rotation.y += 0.3 * dt;
+  time += dt;
+  updateFlows(time);
+  renderer.render(scene, camera);
+})(performance.now());
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  scaleU.value = Math.min(window.devicePixelRatio, 2);
+});
+</script>
+
+</body>
+</html>

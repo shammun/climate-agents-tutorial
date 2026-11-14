@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<!--
+  STEP 2 — Blue Marble texture
+  ============================
+  Builds on Step 1.  New topics:
+    TextureLoader    — loads an image file from disk or a URL and uploads it to the GPU
+    colorSpace       — tells Three.js the colour encoding (sRGB vs linear)
+    anisotropy       — sharpens the texture when it is viewed at a glancing angle
+    fallback colour  — keep the globe looking reasonable if the texture fails to load
+
+  The NASA Blue Marble Next Generation image is a composite of MODIS satellite
+  data (visible light).  It uses an *equirectangular* projection:
+    - Longitude −180° maps to the LEFT edge (u = 0)
+    - Longitude +180° maps to the RIGHT edge (u = 1)
+    - Latitude  −90° maps to the BOTTOM edge (v = 0)
+    - Latitude  +90° maps to the TOP    edge (v = 1)
+
+  This matches exactly how Three.js wraps a texture around a SphereGeometry,
+  so we get a correctly oriented globe with no extra rotation needed.
+
+  The texture file is in ../site/assets/blue_marble.jpg (relative to this file).
+  If you are running these demos outside the repository, run:
+    python scripts/download_blue_marble.py
+  and update TEXTURE_URL below to point at the downloaded file.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Step 2 — Blue Marble Texture</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000510; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    #status { position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+              color: #adf; font: 13px/1.4 monospace; background: rgba(0,0,0,.55);
+              padding: 4px 10px; border-radius: 6px; pointer-events: none; }
+  </style>
+</head>
+<body>
+<div id="status">Loading texture…</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.min.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ── Path to the texture ───────────────────────────────────────────────────────
+// Change this if the texture lives elsewhere on your machine.
+const TEXTURE_URL = '../site/assets/blue_marble.jpg';
+
+// ── Renderer, scene, camera (same as Step 1) ─────────────────────────────────
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0, 2.5);
+
+// ── Globe material — starts with a plain blue colour as a fallback ────────────
+// If the texture fails to load, the globe keeps this colour so the page does not
+// appear broken.
+const globeMat = new THREE.MeshBasicMaterial({ color: 0x0b2238 });
+const globe = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 64), globeMat);
+scene.add(globe);
+
+// ── Load the texture ──────────────────────────────────────────────────────────
+const status = document.getElementById('status');
+
+new THREE.TextureLoader().load(
+  TEXTURE_URL,
+
+  // ── onLoad callback ──────────────────────────────────────────────────────────
+  (tex) => {
+    // colorSpace tells Three.js how the colour values in the image are encoded.
+    //
+    // JPEG files from cameras and graphics tools store colours in *sRGB* space:
+    // dark values are compressed (gamma ≈ 2.2) so the image looks right on a
+    // normal monitor.  If we leave colorSpace at its default (NoColorSpace) the
+    // GPU would treat the values as linear and the globe would look washed-out.
+    //
+    // Setting SRGBColorSpace tells Three.js to linearise the values internally
+    // before any blending so that lighting calculations stay physically correct.
+    tex.colorSpace = THREE.SRGBColorSpace;
+
+    // anisotropy — when you look at the texture at a steep angle (near the
+    // globe's limb) the GPU normally blurs it.  Anisotropic filtering sharpens
+    // it at oblique angles.  Higher values look better but cost GPU memory.
+    // getMaxAnisotropy() returns the hardware maximum; we cap at 8.
+    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+
+    // Now apply the loaded texture to the material.
+    // color.setScalar(0.78) slightly dims the texture so it looks better against
+    // the dark background (plain white tint would leave the poles too bright).
+    globeMat.map = tex;
+    globeMat.color.setScalar(0.78);
+    globeMat.needsUpdate = true;  // tell Three.js the material changed
+
+    status.textContent = 'Texture loaded ✓ — drag to spin';
+    setTimeout(() => status.style.opacity = '0', 2000);
+  },
+
+  // ── onProgress callback (optional) ──────────────────────────────────────────
+  undefined,
+
+  // ── onError callback ─────────────────────────────────────────────────────────
+  () => {
+    status.textContent = 'Texture not found — showing fallback colour. ' +
+      'Run scripts/download_blue_marble.py to get the texture.';
+    status.style.color = '#f99';
+  }
+);
+
+// ── Basic drag rotation ───────────────────────────────────────────────────────
+// (Full drag with inertia is in Step 8; this is just enough to spin the globe
+//  so you can see the texture from different angles.)
+let isDragging = false, lastX = 0;
+renderer.domElement.addEventListener('pointerdown', e => { isDragging = true; lastX = e.clientX; });
+window.addEventListener('pointerup', () => { isDragging = false; });
+window.addEventListener('pointermove', e => {
+  if (!isDragging) return;
+  globe.rotation.y += (e.clientX - lastX) / 300;
+  lastX = e.clientX;
+});
+
+// ── Animation loop ────────────────────────────────────────────────────────────
+let last = performance.now();
+(function animate(now) {
+  requestAnimationFrame(animate);
+  if (!isDragging) globe.rotation.y += 0.3 * Math.min(0.05, (now - last) / 1000);
+  last = now;
+  renderer.render(scene, camera);
+})(performance.now());
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>
