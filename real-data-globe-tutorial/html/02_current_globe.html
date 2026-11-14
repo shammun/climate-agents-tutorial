@@ -141,7 +141,6 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 resize();
-animate();
 
 // ── particles ─────────────────────────────────────────────────────────────
 const NLAT = 181, NLON = 360;
@@ -299,6 +298,7 @@ document.getElementById('btnSlower').addEventListener('click', () => { speedScal
 document.getElementById('btnMore').addEventListener('click', () => { N_PARTICLES = Math.min(3000, N_PARTICLES + 100); buildParticles(); });
 document.getElementById('btnFewer').addEventListener('click', () => { N_PARTICLES = Math.max(50, N_PARTICLES - 100); buildParticles(); });
 document.getElementById('btnReset').addEventListener('click', () => { rot.x = 0.3; rot.y = 0; camera.position.z = 2.6; });
+animate();
 </script>
 </body>
 </html>

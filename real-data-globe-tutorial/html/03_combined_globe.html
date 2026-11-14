@@ -121,7 +121,6 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize); resize();
-animate();
 
 // ── shared utilities ──────────────────────────────────────────────────────
 const NLAT = 181, NLON = 360;
@@ -316,6 +315,7 @@ document.getElementById('btnCurrent').addEventListener('click', function() {
 document.getElementById('btnFaster').addEventListener('click', () => { speedScale = Math.min(4, speedScale * 1.4); });
 document.getElementById('btnSlower').addEventListener('click', () => { speedScale = Math.max(0.1, speedScale / 1.4); });
 document.getElementById('btnReset').addEventListener('click',  () => { rot.x = 0.2; rot.y = 0; camera.position.z = 2.6; });
+animate();
 </script>
 </body>
 </html>
