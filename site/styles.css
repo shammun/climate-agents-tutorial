@@ -305,12 +305,20 @@ h1:hover .anchor, h2:hover .anchor, h3:hover .anchor { opacity: 1; }
 .content p, .content li { max-width: 72ch; }
 .content hr { border: 0; margin: 0; }
 strong { font-weight: 700; }
+.content blockquote {
+  margin: 24px 0; padding: 16px 20px;
+  border-left: 3px solid var(--acc);
+  background: var(--accbg);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  color: var(--muted); font-size: 16px;
+}
+.content h3::before { content: "▸ "; color: var(--acc); font-size: .85em; }
 :not(pre) > code {
   font: 0.875em var(--mono);
-  background: var(--bg2);
-  border: 1px solid var(--line);
-  padding: .15em .4em; border-radius: 6px; word-break: break-word;
-  color: var(--acc2);
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  padding: .15em .45em; border-radius: 6px; word-break: break-word;
+  color: #0f766e;
 }
 :root[data-theme="dark"] :not(pre) > code {
   color: var(--acc);
@@ -384,7 +392,8 @@ strong { font-weight: 700; }
 table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.55; }
 th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th {
-  background: var(--bg2); font-weight: 700; white-space: nowrap;
+  background: linear-gradient(135deg, var(--bg2), color-mix(in srgb, var(--bg2) 80%, var(--accbg)));
+  font-weight: 700; white-space: nowrap;
   font-size: 13px; letter-spacing: .02em; text-transform: uppercase;
   color: var(--muted);
 }
@@ -397,16 +406,16 @@ tbody tr:hover { background: var(--accbg); }
    ============================================================ */
 .diagram {
   margin: 36px auto; max-width: 560px;
-  padding: 20px; border: 1px solid var(--line);
-  border-radius: var(--radius-lg); background: var(--bg2);
-  box-shadow: var(--shadow-md);
+  padding: 20px; border: 1px solid rgba(45,212,191,.18);
+  border-radius: var(--radius-lg); background: #0d1424;
+  box-shadow: 0 0 0 1px rgba(45,212,191,.08), var(--shadow-lg);
   opacity: 0; transform: translateY(20px);
   transition: opacity .5s ease, transform .5s ease;
 }
 .diagram.animate { opacity: 1; transform: translateY(0); }
 .diagram svg { width: 100%; height: auto; display: block; }
 .diagram figcaption {
-  color: var(--muted); font-size: 14px; text-align: center;
+  color: #64748b; font-size: 14px; text-align: center;
   margin-top: 12px; font-style: italic;
 }
 
