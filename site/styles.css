@@ -576,6 +576,7 @@ tbody tr:hover { background: var(--accbg); }
   letter-spacing: -.025em; border-left: none; padding-left: 0;
 }
 .video-title::after { display: none; }
+.video-desc { color: var(--muted); font-size: 15px; margin: 6px 0 0; }
 .video-player {
   border-radius: 16px; overflow: hidden;
   border: 1px solid var(--line);

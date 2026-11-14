@@ -66,6 +66,32 @@
     </div>
   </div>
 </section>
+<section class="video-section" id="building-agents-video" aria-label="Step-by-step agent building video">
+  <div class="video-wrap">
+    <div class="video-heading">
+      <span class="video-eyebrow">65-second walkthrough</span>
+      <h2 class="video-title">How to build an AI agent</h2>
+      <p class="video-desc">The agent loop, project files, skills, subagents, and the full climate pipeline — with animations.</p>
+    </div>
+    <div class="video-player" id="videoPlayer2">
+      <video
+        id="buildingAgentsVideo"
+        src="videos/building-agents.mp4"
+        poster="assets/video-poster.jpg"
+        controls
+        preload="none"
+        style="width:100%;border-radius:14px;display:block;"
+        aria-label="Step-by-step guide: building AI agents for climate data analysis"
+      >
+        Your browser does not support HTML5 video.
+      </video>
+      <div class="video-unavailable" id="videoUnavailable2" style="display:none;">
+        <p>Video not yet rendered. Trigger the <strong>Render explainer video</strong> workflow in GitHub Actions to generate both MP4s.</p>
+        <p><a href="https://github.com/shammun/climate-agents-tutorial/actions">View GitHub Actions →</a></p>
+      </div>
+    </div>
+  </div>
+</section>
 <div class="layout">
   <nav class="toc" id="toc" aria-label="Contents">
     <p class="toc-title">Contents</p>
