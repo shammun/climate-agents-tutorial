@@ -53,10 +53,13 @@
 <body>
 <div id="legend">
   <strong>Ocean current paths (Step 5)</strong><br>
-  <span style="color:#f59e0b">●</span> Gulf Stream<br>
+  <span style="color:#f59e0b">●</span> Gulf Stream &amp; N. Atlantic Drift<br>
   <span style="color:#22d3ee">●</span> Kuroshio Current<br>
-  <span style="color:#60a5fa">●</span> Antarctic Circumpolar Current<br>
-  Drag to rotate
+  <span style="color:#60a5fa">●</span> Antarctic Circumpolar<br>
+  <span style="color:#2dd4bf">●</span> Equatorial Counter-Currents<br>
+  <span style="color:#7dd3fc">●</span> California / Canary / Humboldt<br>
+  <span style="color:#fb923c">●</span> Brazil / East Australia / Somali<br>
+  Drag to rotate · all 15 currents shown
 </div>
 
 <script type="importmap">
@@ -180,35 +183,54 @@ function buildPath(pts, closed, radius) {
   return { pos, m, len: totalLen, closed };
 }
 
-// ── Three sample ocean currents ───────────────────────────────────────────────
-// These are hand-drawn approximations of the real currents' typical paths.
+// ── All 15 ocean currents — same paths as the live hero section ───────────────
+// Hand-drawn approximations of real current centrelines; waypoints are [lat, lon].
 const CURRENTS = [
-  {
-    name: 'Gulf Stream',
+  { name: 'Gulf Stream',
     color: '#f59e0b',
-    // Warm western boundary current: flows north-east along the US east coast,
-    // then curves east across the Atlantic toward Europe
-    pts: [[24.2,-81.5],[26,-79.7],[30,-79.5],[33,-77],[35.5,-74.3],
-          [38,-70],[39.5,-64],[40.5,-57],[42,-50],[45,-43],[48,-36]],
-    closed: false,
-  },
-  {
-    name: 'Kuroshio Current',
+    pts: [[24.2,-81.5],[26,-79.7],[30,-79.5],[33,-77],[35.5,-74.3],[38,-70],[39.5,-64],[40.5,-57],[42,-50],[45,-43],[48,-36]] },
+  { name: 'North Atlantic Drift',
+    color: '#fbbf24',
+    pts: [[48,-34],[51,-26],[55,-18],[59,-10],[62.5,-3],[66,5],[69,12]] },
+  { name: 'Kuroshio Current',
     color: '#22d3ee',
-    // Warm western boundary current in the North Pacific; flows north-east past Japan
-    pts: [[16,123.8],[20,122.6],[24,122.8],[27,125.8],[29.5,129.5],
-          [31.5,132.5],[33,136],[34.3,139.5],[35.3,142],[36,147],[35.5,153],[36.5,160],[37.5,168]],
-    closed: false,
-  },
-  {
-    name: 'Antarctic Circumpolar Current',
-    color: '#60a5fa',
-    // The world's largest current by volume; flows east around Antarctica
-    pts: [[-58,-180],[-59,-160],[-60,-140],[-60,-120],[-60,-100],[-60,-80],
-          [-59,-65],[-56,-55],[-52,-40],[-50,-20],[-50,0],[-49,20],
-          [-48,40],[-48,60],[-50,80],[-51,100],[-53,120],[-55,140],[-57,160]],
-    closed: true,  // wraps around — the last point connects back to the first
-  },
+    pts: [[16,123.8],[20,122.6],[24,122.8],[27,125.8],[29.5,129.5],[31.5,132.5],[33,136],[34.3,139.5],[35.3,142],[36,147],[35.5,153],[36.5,160],[37.5,168]] },
+  { name: 'Antarctic Circumpolar Current',
+    color: '#60a5fa', closed: true,
+    pts: [[-58,-180],[-59,-160],[-60,-140],[-60,-120],[-60,-100],[-60,-80],[-59,-65],[-56,-55],[-52,-40],[-50,-20],[-50,0],[-49,20],[-48,40],[-48,60],[-50,80],[-51,100],[-53,120],[-55,140],[-57,160]] },
+  { name: 'Agulhas Current',
+    color: '#a78bfa',
+    pts: [[-11.5,51],[-11.5,47],[-13,43.5],[-17,41],[-22,37.5],[-25.5,35],[-29,33],[-32,30.2],[-34.5,26.5],[-36.5,22],[-38.5,18.5],[-40.3,19.5],[-40.5,24],[-39.5,30]] },
+  { name: 'Equatorial Counter-Current (Pacific)',
+    color: '#2dd4bf',
+    pts: [[5,130],[5.5,150],[6,170],[6.5,-170],[7,-150],[7,-130],[6.5,-110],[6,-95],[6,-86]] },
+  { name: 'Equatorial Counter-Current (Atlantic)',
+    color: '#2dd4bf',
+    pts: [[6,-42],[6.5,-34],[6,-26],[5,-18],[4,-10],[3.5,-3],[3.5,3]] },
+  { name: 'Equatorial Counter-Current (Indian Ocean)',
+    color: '#2dd4bf',
+    pts: [[-3,46],[-3.5,56],[-4,66],[-4,76],[-3.5,86],[-3,94]] },
+  { name: 'California Current',
+    color: '#7dd3fc',
+    pts: [[46,-126],[42,-126.5],[38,-125.5],[34,-123],[30,-120],[26,-117],[22,-114]] },
+  { name: 'Canary Current',
+    color: '#7dd3fc',
+    pts: [[40,-13],[36,-13.5],[32,-14],[28,-16.5],[24,-19],[20,-20.5],[16,-22]] },
+  { name: 'Brazil Current',
+    color: '#fb923c',
+    pts: [[-8,-33.5],[-13,-37],[-18,-37.5],[-23,-40],[-27,-45.5],[-31,-48.5],[-36,-52]] },
+  { name: 'Labrador Current',
+    color: '#bfdbfe',
+    pts: [[60,-60],[57,-57.5],[54,-53.5],[51,-51],[48,-48.5],[45,-49.5],[43,-52]] },
+  { name: 'Humboldt (Peru) Current',
+    color: '#7dd3fc',
+    pts: [[-42,-76],[-36,-75],[-30,-73.5],[-24,-72.5],[-18,-73.5],[-12,-79],[-6,-83]] },
+  { name: 'East Australian Current',
+    color: '#f472b6',
+    pts: [[-15,147.5],[-20,151.5],[-25,154.5],[-30,154.3],[-34,152.8],[-37,151.5]] },
+  { name: 'Somali Current',
+    color: '#c084fc',
+    pts: [[-2,42.5],[2,46.5],[6,50],[10,52.5],[13.5,56]] },
 ];
 
 // ── Renderer, scene, camera ───────────────────────────────────────────────────

@@ -116,11 +116,24 @@ spin.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(1.003,96,48),new 
 scene.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(1.2,96,48),new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:'varying vec3 vN; varying vec3 vP; void main() { float d = max(0.0, -dot(normalize(vN), normalize(-vP))); gl_FragColor = vec4(0.22, 0.6, 1.0, pow(clamp(d * 1.8, 0.0, 1.0), 2.4) * 0.85); }',transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.BackSide})),{renderOrder:8}));
 fetch(COAST_URL).then(r=>r.ok?r.json():Promise.reject()).then(topo=>{const sc=topo.transform.scale,tr=topo.transform.translate,v=[];for(const arc of topo.arcs){let x=0,y=0,prev=null;for(const d of arc){x+=d[0];y+=d[1];const p=ll(y*sc[1]+tr[1],x*sc[0]+tr[0],1.003);if(prev)v.push(prev[0],prev[1],prev[2],p[0],p[1],p[2]);prev=p;}}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));spin.add(Object.assign(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x8ff0e0,transparent:true,opacity:0.32,depthWrite:false})),{renderOrder:3}));}).catch(()=>{});
 
-// ── Ocean current data (3 currents for brevity) ───────────────────────────────
+// ── All 15 ocean currents — same paths as the live hero section ───────────────
+// Jet streams are appended below; trade winds are computed procedurally.
 const FLOWS_DATA = [
-  {name:'Gulf Stream',color:'#f59e0b',speed:0.10,pts:[[24.2,-81.5],[26,-79.7],[30,-79.5],[33,-77],[35.5,-74.3],[38,-70],[39.5,-64],[40.5,-57],[42,-50],[45,-43],[48,-36]]},
-  {name:'Kuroshio Current',color:'#22d3ee',speed:0.09,pts:[[16,123.8],[20,122.6],[24,122.8],[27,125.8],[29.5,129.5],[31.5,132.5],[33,136],[34.3,139.5],[35.3,142],[36,147],[35.5,153],[36.5,160],[37.5,168]]},
-  {name:'Antarctic Circumpolar',color:'#60a5fa',speed:0.05,closed:true,pts:[[-58,-180],[-59,-160],[-60,-140],[-60,-120],[-60,-100],[-60,-80],[-59,-65],[-56,-55],[-52,-40],[-50,-20],[-50,0],[-49,20],[-48,40],[-48,60],[-50,80],[-51,100],[-53,120],[-55,140],[-57,160]]},
+  {name:'Gulf Stream',              color:'#f59e0b',speed:0.10,pts:[[24.2,-81.5],[26,-79.7],[30,-79.5],[33,-77],[35.5,-74.3],[38,-70],[39.5,-64],[40.5,-57],[42,-50],[45,-43],[48,-36]]},
+  {name:'North Atlantic Drift',     color:'#fbbf24',speed:0.05,pts:[[48,-34],[51,-26],[55,-18],[59,-10],[62.5,-3],[66,5],[69,12]]},
+  {name:'Kuroshio Current',         color:'#22d3ee',speed:0.09,pts:[[16,123.8],[20,122.6],[24,122.8],[27,125.8],[29.5,129.5],[31.5,132.5],[33,136],[34.3,139.5],[35.3,142],[36,147],[35.5,153],[36.5,160],[37.5,168]]},
+  {name:'Antarctic Circumpolar Current',color:'#60a5fa',speed:0.05,closed:true,pts:[[-58,-180],[-59,-160],[-60,-140],[-60,-120],[-60,-100],[-60,-80],[-59,-65],[-56,-55],[-52,-40],[-50,-20],[-50,0],[-49,20],[-48,40],[-48,60],[-50,80],[-51,100],[-53,120],[-55,140],[-57,160]]},
+  {name:'Agulhas Current',          color:'#a78bfa',speed:0.085,pts:[[-11.5,51],[-11.5,47],[-13,43.5],[-17,41],[-22,37.5],[-25.5,35],[-29,33],[-32,30.2],[-34.5,26.5],[-36.5,22],[-38.5,18.5],[-40.3,19.5],[-40.5,24],[-39.5,30]]},
+  {name:'Equatorial Counter-Current (Pacific)',    color:'#2dd4bf',speed:0.04,pts:[[5,130],[5.5,150],[6,170],[6.5,-170],[7,-150],[7,-130],[6.5,-110],[6,-95],[6,-86]]},
+  {name:'Equatorial Counter-Current (Atlantic)',   color:'#2dd4bf',speed:0.04,pts:[[6,-42],[6.5,-34],[6,-26],[5,-18],[4,-10],[3.5,-3],[3.5,3]]},
+  {name:'Equatorial Counter-Current (Indian Ocean)',color:'#2dd4bf',speed:0.04,pts:[[-3,46],[-3.5,56],[-4,66],[-4,76],[-3.5,86],[-3,94]]},
+  {name:'California Current',       color:'#7dd3fc',speed:0.045,pts:[[46,-126],[42,-126.5],[38,-125.5],[34,-123],[30,-120],[26,-117],[22,-114]]},
+  {name:'Canary Current',           color:'#7dd3fc',speed:0.045,pts:[[40,-13],[36,-13.5],[32,-14],[28,-16.5],[24,-19],[20,-20.5],[16,-22]]},
+  {name:'Brazil Current',           color:'#fb923c',speed:0.06, pts:[[-8,-33.5],[-13,-37],[-18,-37.5],[-23,-40],[-27,-45.5],[-31,-48.5],[-36,-52]]},
+  {name:'Labrador Current',         color:'#bfdbfe',speed:0.05, pts:[[60,-60],[57,-57.5],[54,-53.5],[51,-51],[48,-48.5],[45,-49.5],[43,-52]]},
+  {name:'Humboldt (Peru) Current',  color:'#7dd3fc',speed:0.045,pts:[[-42,-76],[-36,-75],[-30,-73.5],[-24,-72.5],[-18,-73.5],[-12,-79],[-6,-83]]},
+  {name:'East Australian Current',  color:'#f472b6',speed:0.07, pts:[[-15,147.5],[-20,151.5],[-25,154.5],[-30,154.3],[-34,152.8],[-37,151.5]]},
+  {name:'Somali Current',           color:'#c084fc',speed:0.08, pts:[[-2,42.5],[2,46.5],[6,50],[10,52.5],[13.5,56]]},
 ];
 
 // ── Jet stream paths (procedural sinusoidal meanders) ────────────────────────
