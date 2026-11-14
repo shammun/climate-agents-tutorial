@@ -183,14 +183,22 @@ async function processMarkdown(text, highlighter) {
   text = text.replace(/^[ \t]*<!--\s*diagram:\s*file-tree\s*-->[ \t]*$/gm, explorerPlaceholder);
   text = text.replace(/^[ \t]*<!--\s*diagram:\s*(\S+)\s*-->[ \t]*$/gm, (_, name) => {
     const key = `ANTDIAGRAM${diagramIdx++}`;
-    const svgPath = join(CONTENT, 'diagrams', name + '.svg');
-    if (!existsSync(svgPath)) { console.warn('  diagram not found:', name); return ''; }
-    let svg = readText(svgPath);
-    svg = svg.replace(/id="(ar|aa)"/g, `id="$1-${name}"`);
-    svg = svg.replace(/url\(#(ar|aa)\)/g, `url(#$1-${name})`);
-    svg = svg.replace(/ width="\d+"/, '').replace(/ height="\d+"/, '');
+    const htmlPath = join(CONTENT, 'diagrams', name + '.html');
+    const svgPath  = join(CONTENT, 'diagrams', name + '.svg');
+    let diagramContent;
+    if (existsSync(htmlPath)) {
+      diagramContent = readText(htmlPath);
+    } else if (existsSync(svgPath)) {
+      let svg = readText(svgPath);
+      svg = svg.replace(/id="(ar|aa)"/g, `id="$1-${name}"`);
+      svg = svg.replace(/url\(#(ar|aa)\)/g, `url(#$1-${name})`);
+      svg = svg.replace(/ width="\d+"/, '').replace(/ height="\d+"/, '');
+      diagramContent = svg;
+    } else {
+      console.warn('  diagram not found:', name); return '';
+    }
     const caption = diagramNames[name] || name;
-    diagramMap[key] = { svg, caption };
+    diagramMap[key] = { svg: diagramContent, caption };
     return key;
   });
 
