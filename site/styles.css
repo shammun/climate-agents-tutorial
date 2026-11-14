@@ -123,7 +123,7 @@ a { color: var(--acc2); }
   position: relative; overflow: hidden;
   min-height: min(90vh, 700px);
   display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #060d1f 0%, #091825 40%, #072420 70%, #060d1f 100%);
+  background: linear-gradient(160deg, #0c3a52 0%, #0369a1 30%, #0891b2 60%, #0e7490 85%, #134e5e 100%);
   padding: 80px 32px 60px;
 }
 /* Interactive globe (WebGL canvas fills the whole hero, behind the text) */
@@ -139,7 +139,7 @@ a { color: var(--acc2); }
 .hero-vignette {
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background: radial-gradient(ellipse 56% 60% at 50% 50%,
-    rgba(4,10,24,.64) 0%, rgba(4,10,24,.42) 50%, rgba(4,10,24,0) 100%);
+    rgba(6,40,65,.68) 0%, rgba(6,40,65,.38) 50%, rgba(6,40,65,0) 100%);
 }
 .globe-labels {
   position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
@@ -154,7 +154,7 @@ a { color: var(--acc2); }
 .globe-tip {
   position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none;
   max-width: 260px; padding: 8px 12px; border-radius: 10px;
-  background: rgba(6,13,31,.92); border: 1px solid rgba(45,212,191,.5);
+  background: rgba(6,45,70,.92); border: 1px solid rgba(45,212,191,.5);
   box-shadow: 0 8px 28px rgba(0,0,0,.5);
   color: #f1f5f9; font: 600 13px/1.35 var(--font);
   opacity: 0; transition: opacity .15s;

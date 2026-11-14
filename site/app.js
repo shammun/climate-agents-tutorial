@@ -99,20 +99,22 @@ document.addEventListener('click', e => {
 
 /* Download file buttons (template files) */
 (function () {
-  const REPO = document.documentElement.dataset.repo || '';
+  const REPO = document.body.dataset.repo || '';
+  function triggerDownload(href, filename) {
+    const a = document.createElement('a');
+    a.href = href; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
   document.addEventListener('click', e => {
     if (e.target.classList.contains('btn-dl')) {
       const path = e.target.dataset.path;
       if (!path || !REPO) return;
       const url = REPO.replace(/\/$/, '') + '/raw/refs/heads/main/climate-agent-template/' + path;
-      const a = document.createElement('a');
-      a.href = url; a.download = path.split('/').pop(); a.click();
+      triggerDownload(url, path.split('/').pop());
     }
     if (e.target.id === 'zipBtn' || e.target.closest('#zipBtn')) {
       const base = document.querySelector('base')?.href || location.origin + location.pathname.replace(/[^/]*$/, '');
-      const a = document.createElement('a');
-      a.href = base + 'downloads/climate-agent-template.zip';
-      a.download = 'climate-agent-template.zip'; a.click();
+      triggerDownload(base + 'downloads/climate-agent-template.zip', 'climate-agent-template.zip');
     }
     if (e.target.classList.contains('btn-gh')) {
       window.open(REPO, '_blank', 'noopener');
