@@ -250,9 +250,14 @@ Comparing ERA5 annual means across years makes multi-decadal wind shifts visible
 
 ## Part 5 — Common issues and fixes
 
-### "Failed to fetch" or CORS error
+### Opening the pages: double-click or a local server
 
-The HTML files use `fetch()` to load the JSON files. Browsers block `fetch()` on `file://` URLs for security reasons. You must serve the files over HTTP:
+Browsers refuse to load ES module files, `fetch()` JSON, or use image files in WebGL when a page is opened straight from disk (`file://`). The pages avoid all three so that double-clicking works:
+
+- Three.js is loaded as a plain script, `html/three.global.min.js` (built from the npm package by `tools/make_three_global.mjs`).
+- `04_process_to_json.py` writes each dataset twice: `winds.json` and `winds.js` (the same data as `window.WIND_DATA = {...}`). The pages load the `.js` file with a `<script>` tag and only fall back to `fetch()` of the `.json` file when served over HTTP.
+
+Serving over HTTP also works if you prefer it:
 
 ```bash
 # From the real-data-globe-tutorial/ directory:
@@ -263,7 +268,7 @@ python -m http.server 8080
 ### Globe loads but particles do not appear
 
 1. Open the browser developer console (F12 → Console tab).
-2. If you see `Failed to fetch ../data/winds.json` → the JSON file has not been generated yet. Run `04_process_to_json.py`.
+2. If the top bar says `no data yet: run python/04_process_to_json.py` → the data files have not been generated yet. Run `04_process_to_json.py`.
 3. If you see a JSON parse error → the JSON file is corrupted or truncated. Re-run `04_process_to_json.py`.
 4. If no errors → run `05_verify_json.py` to check for all-zero fields.
 

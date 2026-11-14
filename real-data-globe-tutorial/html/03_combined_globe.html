@@ -70,11 +70,23 @@
 <div id="loading">Loading data…</div>
 <canvas id="c"></canvas>
 
-<script type="module">
-import * as THREE from './three.module.min.js';
-
+<!-- Plain (non-module) scripts so the page also works when opened directly from disk (file://) -->
+<script src="three.global.min.js"></script>
+<script src="../data/winds.js"></script>
+<script src="../data/currents.js"></script>
+<script>
 const WINDS_URL    = '../data/winds.json';
 const CURRENTS_URL = '../data/currents.json';
+
+// Data comes from ../data/*.js (works from file://) or, failing that, the .json files over HTTP.
+function loadData(globalName, url) {
+  if (window[globalName]) return Promise.resolve(window[globalName]);
+  if (location.protocol === 'file:') return Promise.reject(new Error('no data yet: run python/04_process_to_json.py'));
+  return fetch(url).then(r => {
+    if (!r.ok) throw new Error(`no data yet (HTTP ${r.status}): run python/04_process_to_json.py`);
+    return r.json();
+  });
+}
 
 // ── scene ─────────────────────────────────────────────────────────────────
 const canvas   = document.getElementById('c');
@@ -92,7 +104,7 @@ scene.add(sun);
 const GLOBE_R = 1.0;
 const globe = new THREE.Mesh(
   new THREE.SphereGeometry(GLOBE_R, 64, 64),
-  new THREE.MeshPhongMaterial({ color: 0x080f1e, emissive: 0x030810, specular: 0x1a3355, shininess: 25 }),
+  new THREE.MeshPhongMaterial({ color: 0x1c4c76, emissive: 0x0a1e32, specular: 0x1a3355, shininess: 25 }),
 );
 scene.add(globe);
 scene.add(new THREE.Mesh(
@@ -254,8 +266,14 @@ function updateStatus() {
     `${showWind ? wn : 0} wind + ${showCurrent ? cn : 0} current particles`;
 }
 
-fetch(WINDS_URL)
-  .then(r => { if (!r.ok) throw new Error(`winds: HTTP ${r.status}`); return r.json(); })
+function showLoadError(label, err) {
+  const msg = `${label}: ${err.message}`;
+  document.getElementById('meta').textContent = msg;
+  document.getElementById('loading').textContent = msg;
+  console.error(err);
+}
+
+loadData('WIND_DATA', WINDS_URL)
   .then(data => {
     windMeta = data; updateMeta();
     windLayer = { ...makeLayer({
@@ -265,10 +283,9 @@ fetch(WINDS_URL)
     }), N: 700 };
     checkBothLoaded();
   })
-  .catch(err => { document.getElementById('meta').textContent = `Error (winds): ${err.message}`; console.error(err); });
+  .catch(err => showLoadError('Winds', err));
 
-fetch(CURRENTS_URL)
-  .then(r => { if (!r.ok) throw new Error(`currents: HTTP ${r.status}`); return r.json(); })
+loadData('CURRENT_DATA', CURRENTS_URL)
   .then(data => {
     currMeta = data; updateMeta();
     currentLayer = { ...makeLayer({
@@ -278,7 +295,7 @@ fetch(CURRENTS_URL)
     }), N: 400 };
     checkBothLoaded();
   })
-  .catch(err => { document.getElementById('meta').textContent = `Error (currents): ${err.message}`; console.error(err); });
+  .catch(err => showLoadError('Currents', err));
 
 function animate() {
   requestAnimationFrame(animate);

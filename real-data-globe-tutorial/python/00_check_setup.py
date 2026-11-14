@@ -112,16 +112,16 @@ else:
     warn("currents.json not yet generated",
          "run 02_download_currents_godas.py, then 04_process_to_json.py --source godas")
 
-# ── 5. node_modules / Three.js ────────────────────────────────────────────────
-print(f"\n{BOLD}5. Three.js (node_modules){RESET}")
-three_js = script_dir.parent.parent / "node_modules" / "three" / "build" / "three.module.min.js"
+# ── 5. Three.js (bundled with the tutorial) ───────────────────────────────────
+print(f"\n{BOLD}5. Three.js (html/three.global.min.js){RESET}")
+three_js = script_dir.parent / "html" / "three.global.min.js"
 if three_js.exists():
     size_kb = three_js.stat().st_size // 1024
-    ok(f"three.module.min.js found ({size_kb} KB)")
+    ok(f"three.global.min.js found ({size_kb} KB)")
 else:
-    warn("three.module.min.js not found",
+    warn("three.global.min.js not found",
          f"expected at {three_js}")
-    print(f"  → From the parent project directory run:  npm install")
+    print(f"  → From the parent project directory run:  node tools/make_three_global.mjs {three_js}")
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 print(f"\n{BOLD}Next step:{RESET}")
@@ -131,7 +131,5 @@ if not (winds_json.exists() and currents_json.exists()):
     print("  Process data:   python python/04_process_to_json.py --source era5 --year 2023")
     print("                  python python/04_process_to_json.py --source godas --year 2023")
 else:
-    print("  All data ready. Start the HTTP server and open the globe:")
-    print("  python -m http.server 8080")
-    print("  → http://localhost:8080/html/01_wind_globe.html")
+    print("  All data ready. Open html/01_wind_globe.html in your browser (double-click works).")
 print()

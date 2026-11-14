@@ -53,10 +53,11 @@
 <body>
 <div id="status">Loading coastlines…</div>
 
-<script type="module">
-import * as THREE from './three.module.min.js';
+<script src="three.global.min.js"></script>
+<script src="blue_marble.js"></script>
+<script>
 
-const TEXTURE_URL = '../site/assets/blue_marble.jpg';
+const TEXTURE_URL = window.BLUE_MARBLE_DATA_URL || '../site/assets/blue_marble.jpg';
 const D2R = Math.PI / 180;
 
 // The world-atlas package, served from jsDelivr CDN.

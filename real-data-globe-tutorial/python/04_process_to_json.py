@@ -279,7 +279,15 @@ payload = {
     "speedMax": round(float(speed.max()), 4),
 }
 
-OUT_PATH.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
+json_text = json.dumps(payload, separators=(",", ":"))
+OUT_PATH.write_text(json_text, encoding="utf-8")
 size_kb = OUT_PATH.stat().st_size / 1024
 print(f"  Saved: {OUT_PATH}  ({size_kb:.0f} KB)")
+
+# Same data as a script file: browsers block fetch() of .json from file://,
+# but a plain <script src="../data/winds.js"> loads fine when the page is opened from disk.
+js_var  = "WIND_DATA" if OUT_PATH.stem == "winds" else "CURRENT_DATA"
+JS_PATH = OUT_PATH.with_suffix(".js")
+JS_PATH.write_text(f"window.{js_var}={json_text};\n", encoding="utf-8")
+print(f"  Saved: {JS_PATH}  (for opening the HTML pages directly from disk)")
 print(f"\nDone. Verify with:  python python/05_verify_json.py {OUT_PATH}")

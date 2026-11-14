@@ -62,10 +62,11 @@
   Drag to rotate · all 15 currents shown
 </div>
 
-<script type="module">
-import * as THREE from './three.module.min.js';
+<script src="three.global.min.js"></script>
+<script src="blue_marble.js"></script>
+<script>
 
-const TEXTURE_URL = '../site/assets/blue_marble.jpg';
+const TEXTURE_URL = window.BLUE_MARBLE_DATA_URL || '../site/assets/blue_marble.jpg';
 const COAST_URL   = 'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json';
 const D2R = Math.PI / 180;
 

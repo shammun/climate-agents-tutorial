@@ -67,10 +67,11 @@
   Drag to rotate
 </div>
 
-<script type="module">
-import * as THREE from './three.module.min.js';
+<script src="three.global.min.js"></script>
+<script src="blue_marble.js"></script>
+<script>
 
-const TEXTURE_URL = '../site/assets/blue_marble.jpg';
+const TEXTURE_URL = window.BLUE_MARBLE_DATA_URL || '../site/assets/blue_marble.jpg';
 const COAST_URL   = 'https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json';
 const D2R = Math.PI / 180;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -152,7 +153,7 @@ function makePointMaterial() {
   return new THREE.ShaderMaterial({
     uniforms:{uScale:scaleU},
     vertexShader:'attribute float aSize; attribute float aAlpha; attribute vec3 aColor; uniform float uScale; varying float vA; varying vec3 vC; void main() { vA = aAlpha; vC = aColor; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_PointSize = aSize * uScale; }',
-    fragmentShader:'varying float vA; varying vec3 vC; void main() { float d = length(gl_PointCoord - 0.5) * 2.0; float a = pow(max(0.0, 1.0 - d), 1.8); gl_FragColor = vec4(vC, vA * a); #include <colorspace_fragment> }',
+    fragmentShader:'varying float vA; varying vec3 vC; void main() { float d = length(gl_PointCoord - 0.5) * 2.0; float a = pow(max(0.0, 1.0 - d), 1.8); gl_FragColor = vec4(vC, vA * a);\n#include <colorspace_fragment>\n}',
     transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
   });
 }
@@ -207,7 +208,7 @@ flows.forEach(fl => {
 
 const arrowMesh = new THREE.Mesh(arrowGeo, new THREE.ShaderMaterial({
   vertexShader: 'attribute vec3 aColor; attribute float aAlpha; varying vec3 vC; varying float vA; void main() { vC = aColor; vA = aAlpha; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-  fragmentShader: 'varying vec3 vC; varying float vA; void main() { gl_FragColor = vec4(vC, vA); #include <colorspace_fragment> }',
+  fragmentShader: 'varying vec3 vC; varying float vA; void main() { gl_FragColor = vec4(vC, vA);\n#include <colorspace_fragment>\n}',
   transparent: true, depthWrite: false, side: THREE.DoubleSide,
 }));
 arrowMesh.frustumCulled = false; arrowMesh.renderOrder = 7; spin.add(arrowMesh);

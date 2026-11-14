@@ -39,12 +39,13 @@
 <body>
 <div id="status">Loading texture…</div>
 
-<script type="module">
-import * as THREE from './three.module.min.js';
+<script src="three.global.min.js"></script>
+<script src="blue_marble.js"></script>
+<script>
 
 // ── Path to the texture ───────────────────────────────────────────────────────
 // Change this if the texture lives elsewhere on your machine.
-const TEXTURE_URL = '../site/assets/blue_marble.jpg';
+const TEXTURE_URL = window.BLUE_MARBLE_DATA_URL || '../site/assets/blue_marble.jpg';
 
 // ── Renderer, scene, camera (same as Step 1) ─────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });

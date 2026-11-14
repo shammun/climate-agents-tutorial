@@ -1,2 +1,5 @@
 node_modules/
 dist/
+real-data-globe-tutorial/data/*
+!real-data-globe-tutorial/data/.gitkeep
+__pycache__/

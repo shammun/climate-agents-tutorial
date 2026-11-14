@@ -22,7 +22,7 @@ Unlike the hand-drawn path version in `hero-globe-tutorial/`, every particle her
 |---|---|---|
 | Python | ≥ 3.10 | Data download and processing scripts |
 | Node.js | ≥ 20 | Already installed if you ran `npm install` in the parent project |
-| A modern browser | Chrome 89+ or Firefox 108+ | ES modules from local files |
+| A modern browser | Chrome, Edge, Firefox or Safari | WebGL |
 
 ---
 
@@ -43,9 +43,9 @@ python python/04_process_to_json.py --source godas --year 2023
 python python/01b_download_winds_ncep.py
 python python/04_process_to_json.py --source ncep --year 2023
 
-# 3. Serve the tutorial over HTTP (required — fetch() does not work from file://)
-python -m http.server 8080
-# Then open http://localhost:8080/html/01_wind_globe.html
+# 3. Open html/01_wind_globe.html in your browser (double-clicking the file works).
+#    Serving over HTTP also works: python -m http.server 8080
+#    then open http://localhost:8080/html/01_wind_globe.html
 ```
 
 ---
@@ -87,6 +87,5 @@ See **[guide/REAL_DATA_GLOBE_GUIDE.md](guide/REAL_DATA_GLOBE_GUIDE.md)** for a c
 |---|---|
 | `ModuleNotFoundError: cdsapi` | `pip install -r requirements.txt` |
 | `FileNotFoundError: ~/.cdsapirc` | See Part 1 of the guide for CDS API key setup |
-| Globe renders but no particles | Check browser console; `winds.json` / `currents.json` must be served over HTTP |
-| `fetch` CORS error | You opened the HTML via `file://`; use `python -m http.server 8080` |
+| Globe renders but no particles, top bar says "no data yet" | Run `python/04_process_to_json.py`; it writes `data/winds.js` / `data/currents.js` that the pages load |
 | Particles all stuck at equator | The JSON file has bad data; run `python/05_verify_json.py` to diagnose |

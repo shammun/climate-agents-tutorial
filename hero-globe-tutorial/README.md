@@ -19,7 +19,7 @@ Step-by-step guide to building the interactive WebGL globe used in the
 
 ## Prerequisites
 
-- **Modern browser** — Chrome, Firefox, or Safari (supports WebGL 2 and ES modules).
+- **Modern browser** — Chrome, Firefox, or Safari (supports WebGL 2). The pages open directly from disk: Three.js is loaded from `three.global.min.js` and the Earth texture from `blue_marble.js`, because browsers block ES module files and WebGL image textures on `file://` pages.
   No build step required; open each `.html` file directly.
 - **Python 3.9+** (optional) — only needed if you want to run the helper scripts
   in `scripts/` to download the texture and world-atlas data.

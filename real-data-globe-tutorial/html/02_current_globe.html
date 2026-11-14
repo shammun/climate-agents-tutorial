@@ -72,10 +72,21 @@
 <div id="status">0 particles</div>
 <canvas id="c"></canvas>
 
-<script type="module">
-import * as THREE from './three.module.min.js';
-
+<!-- Plain (non-module) scripts so the page also works when opened directly from disk (file://) -->
+<script src="three.global.min.js"></script>
+<script src="../data/currents.js"></script>
+<script>
 const DATA_URL = '../data/currents.json';
+
+// Data comes from ../data/currents.js (works from file://) or, failing that, currents.json over HTTP.
+function loadData(globalName, url) {
+  if (window[globalName]) return Promise.resolve(window[globalName]);
+  if (location.protocol === 'file:') return Promise.reject(new Error('no data yet: run python/04_process_to_json.py'));
+  return fetch(url).then(r => {
+    if (!r.ok) throw new Error(`no data yet (HTTP ${r.status}): run python/04_process_to_json.py`);
+    return r.json();
+  });
+}
 
 // ── scene ─────────────────────────────────────────────────────────────────
 const canvas   = document.getElementById('c');
@@ -96,7 +107,7 @@ const GLOBE_R = 1.0;
 const globe = new THREE.Mesh(
   new THREE.SphereGeometry(GLOBE_R, 64, 64),
   new THREE.MeshPhongMaterial({
-    color: 0x040e1c, emissive: 0x020812,
+    color: 0x1a4a72, emissive: 0x081c30,
     specular: 0x1a4466, shininess: 30,
     transparent: true, opacity: 0.97,
   }),
@@ -264,8 +275,7 @@ function stepParticles() {
 
 // ── data load ─────────────────────────────────────────────────────────────
 document.getElementById('meta').textContent = 'Fetching current data…';
-fetch(DATA_URL)
-  .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+loadData('CURRENT_DATA', DATA_URL)
   .then(data => {
     uField   = data.uField;
     vField   = data.vField;

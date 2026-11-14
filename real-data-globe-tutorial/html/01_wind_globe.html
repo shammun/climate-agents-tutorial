@@ -74,11 +74,21 @@
 <div id="status">0 particles</div>
 <canvas id="c"></canvas>
 
-<script type="module">
-// ── Three.js from CDN ──────────────────────────────────────────────────────
-import * as THREE from './three.module.min.js';
-
+<!-- Plain (non-module) scripts so the page also works when opened directly from disk (file://) -->
+<script src="three.global.min.js"></script>
+<script src="../data/winds.js"></script>
+<script>
 const DATA_URL = '../data/winds.json';
+
+// Data comes from ../data/winds.js (works from file://) or, failing that, winds.json over HTTP.
+function loadData(globalName, url) {
+  if (window[globalName]) return Promise.resolve(window[globalName]);
+  if (location.protocol === 'file:') return Promise.reject(new Error('no data yet: run python/04_process_to_json.py'));
+  return fetch(url).then(r => {
+    if (!r.ok) throw new Error(`no data yet (HTTP ${r.status}): run python/04_process_to_json.py`);
+    return r.json();
+  });
+}
 
 // ── scene setup ───────────────────────────────────────────────────────────
 const canvas   = document.getElementById('c');
@@ -99,7 +109,7 @@ scene.add(dirLight);
 const GLOBE_R = 1.0;
 const globeGeo  = new THREE.SphereGeometry(GLOBE_R, 64, 64);
 const globeMat  = new THREE.MeshPhongMaterial({
-  color: 0x0a1628, emissive: 0x040c18,
+  color: 0x1d4e7a, emissive: 0x0a2033,
   specular: 0x224466, shininess: 20,
   transparent: true, opacity: 0.95,
 });
@@ -281,11 +291,7 @@ function stepParticles() {
 
 // ── load data ─────────────────────────────────────────────────────────────
 document.getElementById('meta').textContent = 'Fetching wind data…';
-fetch(DATA_URL)
-  .then(r => {
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json();
-  })
+loadData('WIND_DATA', DATA_URL)
   .then(data => {
     uField   = data.uField;
     vField   = data.vField;
@@ -297,10 +303,6 @@ fetch(DATA_URL)
   .catch(err => {
     document.getElementById('meta').textContent = `Error: ${err.message}`;
     console.error(err);
-    if (location.protocol === 'file:') {
-      document.getElementById('status').textContent =
-        'Open via HTTP server: python -m http.server 8080';
-    }
   });
 
 // ── animation loop ────────────────────────────────────────────────────────
