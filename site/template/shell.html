@@ -6,6 +6,9 @@
 <title>Building AI Agents for Climate Data Analysis</title>
 <meta name="description" content="What agents and subagents are, how to write them, and a complete climate template to download and adapt">
 <base href="__BASE__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body data-repo="__REPO__">
@@ -18,16 +21,19 @@
   </button>
 </header>
 <section class="hero" id="top">
-  <p class="eyebrow">Tutorial · November 2026</p>
-  <h1 class="hero-title">Building AI Agents for Climate Data Analysis</h1>
-  <p class="hero-sub">What agents and subagents are, how to write them, and a complete climate template to download and adapt.</p>
-  <div class="hero-btns">
-    <a class="btn primary" href="#introduction">Start reading</a>
-    <button class="btn" id="zipBtn" type="button">Download the template (.zip)</button>
-    <button class="btn btn-gh" type="button">View on GitHub</button>
-    <a class="btn" href="https://github.com/shammun/climate-agent-template" target="_blank" rel="noopener">Use this template</a>
+  <canvas id="heroCanvas" aria-hidden="true"></canvas>
+  <div class="hero-content">
+    <p class="eyebrow">Tutorial · November 2026</p>
+    <h1 class="hero-title">Building AI Agents for Climate Data Analysis</h1>
+    <p class="hero-sub">What agents and subagents are, how to write them, and a complete climate template to download and adapt.</p>
+    <div class="hero-btns">
+      <a class="btn primary" href="#introduction">Start reading</a>
+      <button class="btn btn-outline" id="zipBtn" type="button">Download the template (.zip)</button>
+      <button class="btn btn-outline btn-gh" type="button">View on GitHub</button>
+      <a class="btn btn-outline" href="https://github.com/shammun/climate-agent-template" target="_blank" rel="noopener">Use this template</a>
+    </div>
+    <p class="byline">By <a href="https://github.com/shammun">Shammunul Islam</a></p>
   </div>
-  <p class="byline">By <a href="https://github.com/shammun">Shammunul Islam</a></p>
 </section>
 <div class="layout">
   <nav class="toc" id="toc" aria-label="Contents">
@@ -45,6 +51,7 @@
   <p>Last updated: November 2026</p>
 </footer>
 <div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>
