@@ -626,4 +626,23 @@ tbody tr:hover { background: var(--accbg); }
   .diagram { padding: 8px; margin: 24px -20px; border-radius: 0; border-left: 0; border-right: 0; max-width: none; }
   .code code, .ex-view code, .code pre, .ex-view pre { font-size: 12.5px; }
   .content h2 { padding-left: 12px; }
+  /* Top bar: keep the title on one line so it never spills below the bar */
+  .topbar { padding: 0 16px; gap: 10px; }
+  .brand { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-nav { flex-shrink: 0; }
+}
+@media (max-width: 560px) {
+  .topbar { gap: 8px; }
+  .brand { font-size: 14px; }
+  /* "Tutorial" duplicates the menu and the "Start reading" button */
+  .topbar-nav .topbar-link[href="#introduction"] { display: none; }
+  .topbar-link { padding: 5px 9px; font-size: 12.5px; }
+}
+@media (max-width: 440px) {
+  /* Downloads stays reachable from the menu and the hero download button */
+  .topbar-nav .topbar-link[href="#downloads"] { display: none; }
+}
+@media (max-width: 360px) {
+  .brand { font-size: 13px; }
+  .topbar-link { padding: 5px 7px; }
 }
