@@ -28,10 +28,10 @@ jobs:
       - name: Render video
         run: node render.mjs
 
-      - name: Commit rendered video
+      - name: Commit rendered videos
         run: |
           git config user.name "Shammunul Islam"
           git config user.email "shais13irs@gmail.com"
-          git add dist/videos/explainer.mp4
-          git diff --cached --quiet || git commit -m "Render explainer video"
+          git add dist/videos/explainer.mp4 dist/videos/building-agents.mp4
+          git diff --cached --quiet || git commit -m "Render explainer and building-agents videos"
           git push
