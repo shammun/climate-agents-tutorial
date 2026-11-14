@@ -42,6 +42,7 @@ console.log('Bundling Remotion compositions…');
 const bundled = await bundle({
   entryPoint: path.join(__dirname, 'remotion', 'index.jsx'),
   webpackOverride: (config) => config,
+  publicDir: path.join(__dirname, 'remotion', 'public'),
 });
 
 async function renderComposition(id, outFile) {
