@@ -9,166 +9,123 @@
   margin: 0 auto;
   box-sizing: border-box;
 }
-.dg-agent-loop .dg-title {
-  text-align: center;
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #37474F;
-  margin: 0 0 4px;
-}
-.dg-agent-loop .dg-subtitle {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #78909C;
-  margin: 0 0 20px;
-}
-.dg-agent-loop .dg-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-}
+.dg-agent-loop .dg-title { text-align:center; font-size:1.3rem; font-weight:800; color:#37474F; margin:0 0 4px; }
+.dg-agent-loop .dg-subtitle { text-align:center; font-size:0.8rem; color:#78909C; margin:0 0 6px; }
+.dg-agent-loop .click-hint-global { text-align:center; font-size:0.72rem; color:#B0BEC5; margin:0 0 16px; font-style:italic; }
+.dg-agent-loop .dg-col { display:flex; flex-direction:column; align-items:center; gap:0; }
 /* cards */
 .dg-agent-loop .card {
-  position: relative;
-  border-radius: 20px;
-  padding: 14px 20px;
-  width: 100%;
-  max-width: 400px;
-  box-sizing: border-box;
-  cursor: pointer;
-  transition: transform .18s, box-shadow .18s;
-  border-width: 3px;
-  border-style: solid;
+  position:relative; border-radius:20px; padding:14px 20px; width:100%; max-width:400px;
+  box-sizing:border-box; cursor:pointer; transition:transform .18s, box-shadow .18s;
+  border-width:3px; border-style:solid;
 }
-.dg-agent-loop .card:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 24px #0002;
-}
-.dg-agent-loop .card-task   { background:#FFF8E1; border-color:#F9A825; box-shadow: 4px 4px 0 #FFD54F; }
-.dg-agent-loop .card-model  { background:#E3F2FD; border-color:#1E88E5; box-shadow: 4px 4px 0 #90CAF9; }
-.dg-agent-loop .card-tool   { background:#E8F5E9; border-color:#43A047; box-shadow: 4px 4px 0 #A5D6A7; align-self: flex-end; max-width: 280px; }
-.dg-agent-loop .card-final  { background:#FFF3E0; border-color:#F4511E; box-shadow: 4px 4px 0 #FFAB91; align-self: flex-start; max-width: 280px; }
-.dg-agent-loop .card-title {
-  font-weight: 800;
-  font-size: 1rem;
-  margin: 0 0 6px;
-}
+.dg-agent-loop .card:hover { transform:translateY(-3px) scale(1.02); }
+.dg-agent-loop .card-task  { background:#FFF8E1; border-color:#F9A825; box-shadow:4px 4px 0 #FFD54F; }
+.dg-agent-loop .card-model { background:#E3F2FD; border-color:#1E88E5; box-shadow:4px 4px 0 #90CAF9; }
+.dg-agent-loop .card-tool  { background:#E8F5E9; border-color:#43A047; box-shadow:4px 4px 0 #A5D6A7; align-self:flex-end; max-width:280px; }
+.dg-agent-loop .card-final { background:#FFF3E0; border-color:#F4511E; box-shadow:4px 4px 0 #FFAB91; align-self:flex-start; max-width:280px; }
+.dg-agent-loop .card.open  { box-shadow:0 6px 24px rgba(0,0,0,0.13) !important; transform:none !important; max-width:100% !important; align-self:stretch !important; }
+.dg-agent-loop .card-title { font-weight:800; font-size:1rem; margin:0 0 6px; }
 .dg-agent-loop .card-task  .card-title { color:#E65100; }
 .dg-agent-loop .card-model .card-title { color:#0D47A1; }
 .dg-agent-loop .card-tool  .card-title { color:#1B5E20; }
 .dg-agent-loop .card-final .card-title { color:#BF360C; }
-.dg-agent-loop .card-bullets {
-  margin: 0;
-  padding: 0 0 0 4px;
-  list-style: none;
-  font-size: 0.78rem;
-}
+.dg-agent-loop .card-bullets { margin:0; padding:0 0 0 4px; list-style:none; font-size:0.78rem; }
 .dg-agent-loop .card-task  .card-bullets { color:#6D4C41; }
 .dg-agent-loop .card-model .card-bullets { color:#1565C0; }
 .dg-agent-loop .card-tool  .card-bullets { color:#2E7D32; }
 .dg-agent-loop .card-final .card-bullets { color:#E64A19; }
 .dg-agent-loop .card-bullets li::before { content:"• "; }
-/* tooltip */
+/* hover tooltip */
 .dg-agent-loop .tip {
-  display: none;
-  position: absolute;
-  left: 50%; transform: translateX(-50%);
-  bottom: calc(100% + 10px);
-  background: #FFFDE7;
-  border: 1.5px solid #F9A825;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 0.75rem;
-  color: #5D4037;
-  white-space: nowrap;
-  z-index: 10;
-  box-shadow: 0 4px 12px #0002;
-  pointer-events: none;
+  display:none; position:absolute; left:50%; transform:translateX(-50%);
+  bottom:calc(100% + 10px); background:#FFFDE7; border:1.5px solid #F9A825;
+  border-radius:10px; padding:8px 12px; font-size:0.75rem; color:#5D4037;
+  white-space:nowrap; z-index:10; box-shadow:0 4px 12px #0002; pointer-events:none;
 }
-.dg-agent-loop .card-model .tip  { border-color:#1E88E5; background:#EBF5FB; color:#0D47A1; }
-.dg-agent-loop .card-tool  .tip  { border-color:#43A047; background:#F1F8E9; color:#1B5E20; }
-.dg-agent-loop .card-final .tip  { border-color:#F4511E; background:#FBE9E7; color:#BF360C; }
-.dg-agent-loop .card:hover .tip { display: block; }
+.dg-agent-loop .card-model .tip { border-color:#1E88E5; background:#EBF5FB; color:#0D47A1; }
+.dg-agent-loop .card-tool  .tip { border-color:#43A047; background:#F1F8E9; color:#1B5E20; }
+.dg-agent-loop .card-final .tip { border-color:#F4511E; background:#FBE9E7; color:#BF360C; }
+.dg-agent-loop .card:not(.open):hover .tip { display:block; }
+/* explore hint */
+.dg-agent-loop .explore-hint {
+  font-size:0.63rem; position:absolute; bottom:8px; right:10px; opacity:0.55;
+  pointer-events:none; animation:al-hint-pulse 2.5s ease-in-out infinite;
+}
+.dg-agent-loop .card.open .explore-hint { display:none; }
+@keyframes al-hint-pulse { 0%,100%{opacity:0.3} 60%{opacity:0.8} }
+/* expand panel */
+.dg-agent-loop .expand-panel {
+  display:none; border-top:2px dashed #ccc; margin-top:12px; padding-top:12px;
+  font-size:0.8rem; line-height:1.65; color:#546E7A;
+}
+.dg-agent-loop .card.open .expand-panel { display:block; }
+.dg-agent-loop .card-task.open  .expand-panel { border-color:#F9A825; color:#5D4037; }
+.dg-agent-loop .card-model.open .expand-panel { border-color:#1E88E5; color:#1A237E; }
+.dg-agent-loop .card-tool.open  .expand-panel { border-color:#43A047; color:#1B5E20; }
+.dg-agent-loop .card-final.open .expand-panel { border-color:#F4511E; color:#BF360C; }
+.dg-agent-loop .expand-panel code {
+  font-family:'Cascadia Code','Consolas',monospace; background:rgba(0,0,0,0.07);
+  padding:1px 5px; border-radius:4px; font-size:0.85em;
+}
+.dg-agent-loop .expand-panel pre {
+  background:rgba(0,0,0,0.05); border-left:3px solid currentColor;
+  padding:8px 12px; border-radius:0 8px 8px 0;
+  font-family:'Cascadia Code','Consolas',monospace; font-size:0.76rem;
+  overflow-x:auto; margin:8px 0 4px; white-space:pre;
+}
+.dg-agent-loop .expand-panel .ep-tip {
+  margin-top:8px; padding:6px 10px; border-radius:8px;
+  background:rgba(0,0,0,0.04); font-style:italic; font-size:0.76rem;
+}
+.dg-agent-loop .expand-panel .close-hint {
+  font-size:0.65rem; opacity:0.5; margin-top:10px; text-align:right; font-style:italic;
+}
 /* arrows */
 .dg-agent-loop .arrow-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  color: #90A4AE;
-  margin: 2px 0;
-  min-height: 28px;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  font-size:0.75rem; color:#90A4AE; margin:2px 0; min-height:28px;
 }
-.dg-agent-loop .arrow-row.left  { justify-content: flex-start; padding-left: 48px; }
-.dg-agent-loop .arrow-row.right { justify-content: flex-end;  padding-right: 48px; }
-.dg-agent-loop .arrow-down::after  { content:"↓"; font-size:1.3rem; display:block; }
-.dg-agent-loop .arrow-curve-r { font-size:1.3rem; }
-.dg-agent-loop .arrow-curve-l { font-size:1.3rem; }
-@keyframes pulse-down { 0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)} }
-.dg-agent-loop .arrow-animated { animation: pulse-down 1s ease-in-out infinite; }
-/* loop row */
-.dg-agent-loop .loop-row {
-  display: flex;
-  width: 100%;
-  max-width: 400px;
-  gap: 12px;
-  align-items: flex-start;
-  margin: 0;
-}
-.dg-agent-loop .loop-side {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  flex: 1;
-}
-.dg-agent-loop .loop-label {
-  font-size: 0.72rem;
-  color: #78909C;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  align-self: flex-end;
-  padding: 4px 0;
-}
-/* did-you-know */
+.dg-agent-loop .arrow-row.left  { justify-content:flex-start; padding-left:48px; }
+.dg-agent-loop .arrow-row.right { justify-content:flex-end; padding-right:48px; }
+@keyframes al-pulse-down { 0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)} }
+.dg-agent-loop .arrow-animated { animation:al-pulse-down 1s ease-in-out infinite; }
+.dg-agent-loop .loop-row { display:flex; width:100%; max-width:400px; gap:12px; align-items:flex-start; margin:0; }
+.dg-agent-loop .loop-row.open-mode { flex-direction:column; }
+/* dyk */
 .dg-agent-loop .dyk {
-  background: #FCE4EC;
-  border: 2px dashed #E91E63;
-  border-radius: 14px;
-  padding: 10px 16px;
-  font-size: 0.78rem;
-  color: #880E4F;
-  max-width: 400px;
-  width: 100%;
-  box-sizing: border-box;
-  text-align: center;
-  margin-top: 10px;
+  background:#FCE4EC; border:2px dashed #E91E63; border-radius:14px; padding:10px 16px;
+  font-size:0.78rem; color:#880E4F; max-width:400px; width:100%; box-sizing:border-box;
+  text-align:center; margin-top:10px;
 }
-.dg-agent-loop .dyk strong { color: #AD1457; }
-/* caption */
-.dg-agent-loop .caption {
-  text-align: center;
-  font-size: 0.75rem;
-  color: #90A4AE;
-  font-style: italic;
-  margin-top: 14px;
-}
+.dg-agent-loop .dyk strong { color:#AD1457; }
+.dg-agent-loop .caption { text-align:center; font-size:0.75rem; color:#90A4AE; font-style:italic; margin-top:14px; }
 </style>
 
 <p class="dg-title">🔄 The Agent Loop</p>
 <p class="dg-subtitle">The model only decides — the loop runs the tools</p>
+<p class="click-hint-global">✨ Click any card to explore in depth</p>
 
 <div class="dg-col">
 
   <!-- TASK -->
   <div class="card card-task" style="border-radius:36px; max-width:280px;">
     <div class="tip">Can be text, a file path, or a whole project brief</div>
+    <span class="explore-hint">click to explore ↓</span>
     <div class="card-title">🎯 Task</div>
     <ul class="card-bullets">
       <li>Your request or goal</li>
       <li>e.g. Analyze SST anomalies for 2023</li>
     </ul>
+    <div class="expand-panel">
+      <p>A task can be as simple as <em>"Analyze SST anomalies for 2023"</em> or as complex as a multi-page brief. The agent reads it verbatim on every loop iteration — so the more specific you are, the better.</p>
+      <p><strong>Good task example:</strong></p>
+      <pre>"Download ERA5 2m temperature for 2000–2023,
+compute JJA seasonal mean, plot a trend map,
+and save to figures/ as a PNG."</pre>
+      <div class="ep-tip">💡 Include file paths, variable names, and expected outputs directly in the task. The agent won't guess.</div>
+      <div class="close-hint">click again to close ↑</div>
+    </div>
   </div>
 
   <div class="arrow-row arrow-animated" style="color:#F9A825;">↓ <span style="font-size:.7rem">sent to model</span></div>
@@ -176,6 +133,7 @@
   <!-- MODEL -->
   <div class="card card-model">
     <div class="tip" style="bottom:auto;top:calc(100% + 10px);">The model never runs tools — it only decides. The harness runs them.</div>
+    <span class="explore-hint">click to explore ↓</span>
     <div class="card-title">🧠 Model (LLM)</div>
     <ul class="card-bullets">
       <li>reads: instructions + task + ALL tool results so far</li>
@@ -183,14 +141,21 @@
       <li>or: writes final answer when finished</li>
       <li style="font-style:italic;opacity:.75">⚠ The model never executes — it instructs</li>
     </ul>
+    <div class="expand-panel">
+      <p>The model never touches files directly. It outputs a structured tool call like:</p>
+      <pre>{"tool": "bash", "input": "python trend.py"}</pre>
+      <p>…and the harness executes it. This separation lets the LLM focus on reasoning while the harness handles execution safety. Claude reads the <strong>entire message history</strong> on every loop — so long chains can get expensive in tokens.</p>
+      <div class="ep-tip">💡 Keep tasks focused. A chain of 20 tool calls means the model re-reads everything 20 times.</div>
+      <div class="close-hint">click again to close ↑</div>
+    </div>
   </div>
 
   <!-- loop row -->
-  <div class="loop-row" style="max-width:400px;">
+  <div class="loop-row" id="al-loop-row" style="max-width:400px;">
     <!-- left side: done arrow -->
     <div style="display:flex;flex-direction:column;align-items:center;width:48px;">
-      <div class="loop-label" style="color:#F4511E;writing-mode:horizontal-tb;transform:none;font-size:.7rem;text-align:center;">done ✓</div>
-      <div style="font-size:1.6rem;color:#F4511E;animation:pulse-down 1.2s ease-in-out infinite;">↓</div>
+      <div style="color:#F4511E;font-size:.7rem;text-align:center;">done ✓</div>
+      <div style="font-size:1.6rem;color:#F4511E;animation:al-pulse-down 1.2s ease-in-out infinite;">↓</div>
     </div>
     <!-- spacer -->
     <div style="flex:1;"></div>
@@ -199,6 +164,7 @@
       <div style="font-size:.7rem;color:#43A047;text-align:right;">asks for a tool ↘</div>
       <div class="card card-tool" style="margin:0;">
         <div class="tip" style="right:0;left:auto;transform:none;">bash · read_file · write_file · python · search_web · download · sql_query</div>
+        <span class="explore-hint">click ↓</span>
         <div class="card-title">🔧 Tool Runner</div>
         <ul class="card-bullets">
           <li>read / write files</li>
@@ -206,21 +172,38 @@
           <li>search the web</li>
           <li>download climate data</li>
         </ul>
+        <div class="expand-panel">
+          <p>Common climate science tools:</p>
+          <pre>bash        → run Python / NCO / CDO scripts
+read_file   → inspect NetCDF headers
+write_file  → save processed data
+python      → run inline snippets
+search_web  → look up variable conventions</pre>
+          <p>The tool list is declared in AGENTS.md under <code>tools:</code> — the agent can <strong>only</strong> call tools listed there.</p>
+          <div class="close-hint">click again to close ↑</div>
+        </div>
       </div>
       <div style="font-size:.7rem;color:#1E88E5;text-align:right;">↗ result returned</div>
     </div>
   </div>
 
   <!-- FINAL ANSWER -->
-  <div style="align-self:flex-start;padding-left:0;width:100%;max-width:400px;">
+  <div style="align-self:flex-start;width:100%;max-width:400px;">
     <div class="card card-final" style="max-width:280px;">
       <div class="tip" style="right:0;left:auto;transform:none;">Loop ends when the model outputs text instead of a tool call</div>
+      <span class="explore-hint">click ↓</span>
       <div class="card-title">✅ Final Answer</div>
       <ul class="card-bullets">
         <li>returned to the caller</li>
         <li>the agent stops here</li>
         <li>working steps stay private</li>
       </ul>
+      <div class="expand-panel">
+        <p>The agent stops when it outputs plain text with <em>no tool call</em>. Everything it wrote, every bash command it ran, every intermediate file — none of that is visible to the caller.</p>
+        <p>The caller only sees this final message. That isolation is what makes agents <strong>composable</strong>: one agent's messy work becomes another agent's clean input.</p>
+        <div class="ep-tip">💡 Ask your agent to return structured output (JSON) in the final answer — it makes chaining agents much easier.</div>
+        <div class="close-hint">click again to close ↑</div>
+      </div>
     </div>
   </div>
 
@@ -229,5 +212,17 @@
   </div>
 
 </div>
-<p class="caption">Hover each card to learn more · The loop repeats until the model writes its final answer</p>
+<p class="caption">Click any card to explore · The loop repeats until the model writes its final answer</p>
+
+<script>(function(){
+  var root = document.currentScript ? document.currentScript.parentElement : document.querySelector('.dg-agent-loop');
+  root.querySelectorAll('.card').forEach(function(card){
+    card.addEventListener('click', function(e){
+      e.stopPropagation();
+      var wasOpen = card.classList.contains('open');
+      root.querySelectorAll('.card.open').forEach(function(c){ c.classList.remove('open'); });
+      if(!wasOpen) card.classList.add('open');
+    });
+  });
+})();</script>
 </div>

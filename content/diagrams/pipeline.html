@@ -1,0 +1,297 @@
+<div class="dg dg-pipeline">
+<style>
+.dg-pipeline {
+  font-family:'Segoe UI',system-ui,sans-serif; background:#FFFBF0; border-radius:24px;
+  padding:28px 20px 20px; max-width:700px; margin:0 auto; box-sizing:border-box;
+}
+.dg-pipeline .dg-title { text-align:center; font-size:1.3rem; font-weight:800; color:#37474F; margin:0 0 4px; }
+.dg-pipeline .dg-subtitle { text-align:center; font-size:0.8rem; color:#78909C; margin:0 0 4px; }
+.dg-pipeline .click-hint { text-align:center; font-size:0.72rem; color:#B0BEC5; margin:0 0 18px; font-style:italic; }
+
+/* ── pipeline row ── */
+.dg-pipeline .pipe-row {
+  display:flex; align-items:flex-start; gap:0; justify-content:center; flex-wrap:nowrap;
+}
+/* connector arrow between steps */
+.dg-pipeline .pipe-arrow {
+  display:flex; align-items:center; justify-content:center;
+  min-width:28px; padding-top:28px; flex-shrink:0;
+}
+.dg-pipeline .pipe-arrow svg { width:28px; height:18px; overflow:visible; }
+@keyframes pipe-flow {
+  0%   { stroke-dashoffset:24; }
+  100% { stroke-dashoffset:0; }
+}
+.dg-pipeline .pipe-arrow line {
+  stroke:#B0BEC5; stroke-width:3; stroke-dasharray:6 3;
+  animation:pipe-flow 0.7s linear infinite;
+}
+/* step card */
+.dg-pipeline .step-card {
+  border-radius:18px; padding:14px 12px 12px; border-width:3px; border-style:solid;
+  position:relative; cursor:pointer; transition:transform .18s, box-shadow .18s;
+  flex:1; min-width:0; max-width:130px; box-sizing:border-box;
+}
+.dg-pipeline .step-card:not(.active):hover { transform:translateY(-4px); }
+.dg-pipeline .step-card.active { transform:translateY(-6px); z-index:2; }
+
+/* per-step colors */
+.dg-pipeline .step-1 { background:#E3F2FD; border-color:#1E88E5; box-shadow:4px 4px 0 #90CAF9; }
+.dg-pipeline .step-2 { background:#FFF8E1; border-color:#F9A825; box-shadow:4px 4px 0 #FFD54F; }
+.dg-pipeline .step-3 { background:#E8F5E9; border-color:#43A047; box-shadow:4px 4px 0 #A5D6A7; }
+.dg-pipeline .step-4 { background:#F3E5F5; border-color:#8E24AA; box-shadow:4px 4px 0 #CE93D8; }
+.dg-pipeline .step-5 { background:#FFF3E0; border-color:#F4511E; box-shadow:4px 4px 0 #FFAB91; }
+.dg-pipeline .step-card.active { box-shadow:0 8px 28px rgba(0,0,0,0.16) !important; }
+
+/* number badge */
+.dg-pipeline .num-badge {
+  width:28px; height:28px; border-radius:50%; display:flex; align-items:center;
+  justify-content:center; font-size:0.82rem; font-weight:900; border-width:2px; border-style:solid;
+  margin-bottom:8px; background:#fff;
+}
+.dg-pipeline .step-1 .num-badge { border-color:#1E88E5; color:#0D47A1; }
+.dg-pipeline .step-2 .num-badge { border-color:#F9A825; color:#E65100; }
+.dg-pipeline .step-3 .num-badge { border-color:#43A047; color:#1B5E20; }
+.dg-pipeline .step-4 .num-badge { border-color:#8E24AA; color:#6A1B9A; }
+.dg-pipeline .step-5 .num-badge { border-color:#F4511E; color:#BF360C; }
+
+/* read-only badge */
+.dg-pipeline .ro-badge {
+  font-size:.58rem; font-weight:700; padding:1px 5px; border-radius:6px;
+  display:inline-block; margin-bottom:4px; color:#E91E63; border:1px solid #E91E63; background:#FCE4EC;
+}
+/* step name + desc */
+.dg-pipeline .step-name { font-weight:800; font-size:0.82rem; margin:0 0 2px; line-height:1.3; }
+.dg-pipeline .step-1 .step-name { color:#0D47A1; }
+.dg-pipeline .step-2 .step-name { color:#E65100; }
+.dg-pipeline .step-3 .step-name { color:#1B5E20; }
+.dg-pipeline .step-4 .step-name { color:#6A1B9A; }
+.dg-pipeline .step-5 .step-name { color:#BF360C; }
+.dg-pipeline .step-desc { font-size:0.72rem; opacity:0.75; margin:0 0 6px; }
+/* output file pill */
+.dg-pipeline .out-pill {
+  font-size:0.65rem; font-family:'Cascadia Code','Consolas',monospace;
+  border-radius:6px; padding:2px 6px; display:inline-block; margin-top:4px;
+  border-width:1px; border-style:dashed;
+}
+.dg-pipeline .step-1 .out-pill { background:#BBDEFB; color:#0D47A1; border-color:#1E88E5; }
+.dg-pipeline .step-2 .out-pill { background:#FFF9C4; color:#E65100; border-color:#F9A825; }
+.dg-pipeline .step-3 .out-pill { background:#C8E6C9; color:#1B5E20; border-color:#43A047; }
+.dg-pipeline .step-4 .out-pill { background:#E1BEE7; color:#6A1B9A; border-color:#8E24AA; }
+.dg-pipeline .step-5 .out-pill { background:#FFE0B2; color:#BF360C; border-color:#F4511E; }
+/* explore hint */
+.dg-pipeline .explore-hint {
+  font-size:0.6rem; position:absolute; bottom:6px; right:7px; opacity:0.5;
+  pointer-events:none; animation:pp-hint-pulse 2.5s ease-in-out infinite;
+}
+.dg-pipeline .step-card.active .explore-hint { display:none; }
+@keyframes pp-hint-pulse { 0%,100%{opacity:0.25} 60%{opacity:0.7} }
+
+/* ── detail panel ── */
+.dg-pipeline .detail-panel {
+  display:none; margin-top:16px; border-radius:18px; padding:18px 20px; border-width:3px; border-style:solid;
+  font-size:0.82rem; line-height:1.65; position:relative; transition:border-color .2s;
+}
+.dg-pipeline .detail-panel.visible { display:block; animation:pp-fadein 0.2s ease; }
+@keyframes pp-fadein { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+.dg-pipeline .detail-panel.dp-1 { background:#E3F2FD; border-color:#1E88E5; color:#0D47A1; }
+.dg-pipeline .detail-panel.dp-2 { background:#FFF8E1; border-color:#F9A825; color:#5D4037; }
+.dg-pipeline .detail-panel.dp-3 { background:#E8F5E9; border-color:#43A047; color:#1B5E20; }
+.dg-pipeline .detail-panel.dp-4 { background:#F3E5F5; border-color:#8E24AA; color:#4A148C; }
+.dg-pipeline .detail-panel.dp-5 { background:#FFF3E0; border-color:#F4511E; color:#BF360C; }
+.dg-pipeline .dp-title { font-weight:800; font-size:1rem; margin:0 0 10px; }
+.dg-pipeline .dp-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+@media(max-width:500px){ .dg-pipeline .dp-grid { grid-template-columns:1fr; } }
+.dg-pipeline .dp-cell { background:rgba(255,255,255,0.6); border-radius:10px; padding:8px 12px; }
+.dg-pipeline .dp-cell-label { font-size:0.68rem; font-weight:700; opacity:0.65; text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px; }
+.dg-pipeline .dp-cell-val { font-size:0.78rem; font-family:'Cascadia Code','Consolas',monospace; }
+.dg-pipeline .dp-snippet pre {
+  background:rgba(0,0,0,0.06); border-left:3px solid currentColor; padding:8px 12px;
+  border-radius:0 8px 8px 0; font-family:'Cascadia Code','Consolas',monospace;
+  font-size:0.75rem; overflow-x:auto; white-space:pre; margin:8px 0 4px;
+}
+.dg-pipeline .dp-snippet-label { font-size:0.73rem; font-weight:700; margin-top:10px; margin-bottom:2px; }
+.dg-pipeline .dp-tip { margin-top:10px; padding:8px 12px; border-radius:10px; background:rgba(255,255,255,0.5); font-style:italic; font-size:0.76rem; }
+.dg-pipeline .dp-close { text-align:right; font-size:0.65rem; opacity:0.5; margin-top:10px; cursor:pointer; }
+.dg-pipeline .dp-close:hover { opacity:0.8; }
+
+/* mobile: vertical layout */
+@media(max-width:580px){
+  .dg-pipeline .pipe-row { flex-direction:column; align-items:stretch; }
+  .dg-pipeline .pipe-arrow { padding-top:0; min-width:auto; height:28px; justify-content:center; }
+  .dg-pipeline .pipe-arrow svg { transform:rotate(90deg); }
+  .dg-pipeline .step-card { max-width:100%; }
+}
+
+/* dyk + caption */
+.dg-pipeline .dyk { background:#FCE4EC; border:2px dashed #E91E63; border-radius:14px; padding:10px 16px; font-size:0.78rem; color:#880E4F; text-align:center; margin-top:14px; }
+.dg-pipeline .dyk strong { color:#AD1457; }
+.dg-pipeline .caption { text-align:center; font-size:0.74rem; color:#90A4AE; font-style:italic; margin-top:12px; }
+</style>
+
+<p class="dg-title">🔁 The Five-Agent Pipeline</p>
+<p class="dg-subtitle">Each step writes the files the next step reads — data flows forward, never back</p>
+<p class="click-hint">✨ Click any step to see tools, inputs, outputs and a sample AGENTS.md snippet</p>
+
+<!-- PIPELINE ROW -->
+<div class="pipe-row">
+
+  <!-- Step 1 -->
+  <div class="step-card step-1" data-step="1">
+    <span class="explore-hint">click ↓</span>
+    <div class="num-badge">1</div>
+    <div class="step-name">📡 data-fetcher</div>
+    <div class="step-desc">download ERA5</div>
+    <div class="out-pill">data/raw/era5/*.nc</div>
+  </div>
+
+  <div class="pipe-arrow">
+    <svg viewBox="0 0 28 18"><line x1="0" y1="9" x2="20" y2="9" marker-end="url(#pp-arr)"/><defs><marker id="pp-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#B0BEC5"/></marker></defs></svg>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step-card step-2" data-step="2">
+    <span class="ro-badge">read-only</span>
+    <span class="explore-hint">click ↓</span>
+    <div class="num-badge">2</div>
+    <div class="step-name">🔍 data-qc</div>
+    <div class="step-desc">check the files</div>
+    <div class="out-pill">reports/qc_*.md</div>
+  </div>
+
+  <div class="pipe-arrow">
+    <svg viewBox="0 0 28 18"><line x1="0" y1="9" x2="20" y2="9" marker-end="url(#pp-arr2)"/><defs><marker id="pp-arr2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#B0BEC5"/></marker></defs></svg>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step-card step-3" data-step="3">
+    <span class="explore-hint">click ↓</span>
+    <div class="num-badge">3</div>
+    <div class="step-name">📊 climate-analyst</div>
+    <div class="step-desc">JJA mean, trend</div>
+    <div class="out-pill">data/processed/*.nc</div>
+  </div>
+
+  <div class="pipe-arrow">
+    <svg viewBox="0 0 28 18"><line x1="0" y1="9" x2="20" y2="9" marker-end="url(#pp-arr3)"/><defs><marker id="pp-arr3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#B0BEC5"/></marker></defs></svg>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step-card step-4" data-step="4">
+    <span class="explore-hint">click ↓</span>
+    <div class="num-badge">4</div>
+    <div class="step-name">🎨 figure-maker</div>
+    <div class="step-desc">map + time series</div>
+    <div class="out-pill">figures/*.png</div>
+  </div>
+
+  <div class="pipe-arrow">
+    <svg viewBox="0 0 28 18"><line x1="0" y1="9" x2="20" y2="9" marker-end="url(#pp-arr4)"/><defs><marker id="pp-arr4" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#B0BEC5"/></marker></defs></svg>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step-card step-5" data-step="5">
+    <span class="ro-badge">read-only</span>
+    <span class="explore-hint">click ↓</span>
+    <div class="num-badge">5</div>
+    <div class="step-name">📝 results-reviewer</div>
+    <div class="step-desc">independent check</div>
+    <div class="out-pill">VERDICT: READY</div>
+  </div>
+
+</div>
+
+<!-- DETAIL PANEL (shown on click) -->
+<div class="detail-panel" id="pp-detail"></div>
+
+<div class="dyk">
+  🌟 <strong>Did you know?</strong> Each step writes files the next reads — if data-qc returns FAIL, the main agent re-runs data-fetcher automatically before proceeding.
+</div>
+<p class="caption">Click any step to explore · Each step hands files to the next · read-only agents cannot modify inputs</p>
+
+<script>(function(){
+var DATA = {
+  1: {
+    cls:'dp-1', title:'📡 data-fetcher — Step 1 of 5',
+    tools:'bash · write_file', toolsDesc:'Can execute shell commands and write new files',
+    input:'CDS API (internet)', output:'data/raw/era5/*.nc',
+    snippet:'name: data-fetcher\ndescription: Downloads ERA5 reanalysis via the CDS API\ntools: [bash, write_file]\nskills: [era5-download]\n---\nSave each year as a separate NetCDF4 file\nto data/raw/era5/. Never overwrite existing files.',
+    tip:'💡 Always save raw files untouched. Downstream agents read them read-only — if re-downloading, write to a new filename.'
+  },
+  2: {
+    cls:'dp-2', title:'🔍 data-qc — Step 2 of 5 (read-only)',
+    tools:'read_file · python', toolsDesc:'Can only read — no write_file allowed',
+    input:'data/raw/era5/*.nc', output:'reports/qc_*.md',
+    snippet:'name: data-qc\ndescription: Validates ERA5 files for spatial/temporal coverage\ntools: [read_file, python]\n# read-only: write_file intentionally omitted\n---\nReturn JSON: {status: PASS|FAIL, warnings: [...]}',
+    tip:'💡 Returns structured JSON — if status is FAIL, the main agent stops the pipeline and re-runs data-fetcher with adjusted parameters.'
+  },
+  3: {
+    cls:'dp-3', title:'📊 climate-analyst — Step 3 of 5',
+    tools:'python · read_file · write_file', toolsDesc:'Full compute access — reads raw, writes processed',
+    input:'data/raw/era5/*.nc + reports/qc_*.md', output:'data/processed/*.nc',
+    snippet:'name: climate-analyst\ndescription: Computes JJA seasonal mean and linear trend\ntools: [python, read_file, write_file]\n---\nUse scipy.stats.linregress. Save trend slope\nand p-value as NetCDF with CF attributes.',
+    tip:'💡 Computes JJA seasonal mean per grid cell, then fits a linear trend with scipy.stats.linregress. All output files get CF-compliant attributes.'
+  },
+  4: {
+    cls:'dp-4', title:'🎨 figure-maker — Step 4 of 5',
+    tools:'python · read_file · write_file', toolsDesc:'Full access — reads processed data, writes PNG figures',
+    input:'data/processed/*.nc', output:'figures/*.png',
+    snippet:'name: figure-maker\ndescription: Produces publication-quality trend maps and time series\ntools: [python, read_file, write_file]\n---\nUse matplotlib + cartopy. Prefix each figure\nwith ISO date: YYYY-MM-DD_name.png',
+    tip:'💡 Uses matplotlib + cartopy. Each figure gets an ISO-date prefix: 2024-01-15_sst_trend.png — making it easy to compare runs.'
+  },
+  5: {
+    cls:'dp-5', title:'📝 results-reviewer — Step 5 of 5 (read-only)',
+    tools:'read_file · bash', toolsDesc:'Read-only — cannot modify any file',
+    input:'figures/*.png + data/processed/*.nc', output:'VERDICT: READY or NEEDS_REVISION',
+    snippet:'name: results-reviewer\ndescription: Independent QC of figures and processed data\ntools: [read_file, bash]\n# read-only agent: no write_file\n---\nReturn VERDICT: READY or VERDICT: NEEDS_REVISION\nwith specific reasons for any revision.',
+    tip:'💡 If VERDICT is NEEDS_REVISION, the main agent re-runs from the failed step — targeted recovery, not a full restart.'
+  }
+};
+
+var root = document.currentScript ? document.currentScript.parentElement : document.querySelector('.dg-pipeline');
+var panel = root.querySelector('#pp-detail');
+var cards = root.querySelectorAll('.step-card');
+var activeStep = null;
+
+function showPanel(step){
+  var d = DATA[step];
+  if(!d) return;
+  panel.className = 'detail-panel visible ' + d.cls;
+  panel.innerHTML =
+    '<div class="dp-title">'+d.title+'</div>'+
+    '<div class="dp-grid">'+
+      '<div class="dp-cell"><div class="dp-cell-label">🔧 Tools</div><div class="dp-cell-val">'+d.tools+'</div><div style="font-size:.7rem;margin-top:3px;opacity:.7;">'+d.toolsDesc+'</div></div>'+
+      '<div class="dp-cell"><div class="dp-cell-label">📥 Input</div><div class="dp-cell-val">'+d.input+'</div></div>'+
+      '<div class="dp-cell"><div class="dp-cell-label">📤 Output</div><div class="dp-cell-val">'+d.output+'</div></div>'+
+      '<div class="dp-cell"><div class="dp-cell-label">📄 File format</div><div class="dp-cell-val">'+(step<=1?'NetCDF4 (ERA5 native)':step===2?'Markdown report':step===3?'NetCDF4 (CF-1.8)':step===4?'PNG, 300 dpi':'Plain text / JSON')+'</div></div>'+
+    '</div>'+
+    '<div class="dp-snippet"><div class="dp-snippet-label">📝 Sample AGENTS.md entry:</div><pre>'+d.snippet+'</pre></div>'+
+    '<div class="dp-tip">'+d.tip+'</div>'+
+    '<div class="dp-close" data-action="close">▲ click to close</div>';
+  panel.querySelector('[data-action="close"]').addEventListener('click', function(){
+    panel.className = 'detail-panel';
+    panel.innerHTML = '';
+    if(activeStep){ activeStep.classList.remove('active'); activeStep=null; }
+  });
+}
+
+cards.forEach(function(card){
+  card.addEventListener('click', function(e){
+    e.stopPropagation();
+    var step = parseInt(card.getAttribute('data-step'));
+    var isSame = (activeStep === card);
+    cards.forEach(function(c){ c.classList.remove('active'); });
+    if(isSame){
+      panel.className='detail-panel'; panel.innerHTML=''; activeStep=null;
+    } else {
+      card.classList.add('active');
+      activeStep = card;
+      showPanel(step);
+      setTimeout(function(){
+        panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+      }, 50);
+    }
+  });
+});
+})();</script>
+</div>

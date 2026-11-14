@@ -1,173 +1,101 @@
 <div class="dg dg-load-timeline">
 <style>
 .dg-load-timeline {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  background: #FFFBF0;
-  border-radius: 24px;
-  padding: 28px 24px 20px;
-  max-width: 580px;
-  margin: 0 auto;
-  box-sizing: border-box;
+  font-family:'Segoe UI',system-ui,sans-serif; background:#FFFBF0; border-radius:24px;
+  padding:28px 24px 20px; max-width:580px; margin:0 auto; box-sizing:border-box;
 }
-.dg-load-timeline .dg-title {
-  text-align: center;
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #37474F;
-  margin: 0 0 4px;
-}
-.dg-load-timeline .dg-subtitle {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #78909C;
-  margin: 0 0 20px;
-}
+.dg-load-timeline .dg-title { text-align:center; font-size:1.3rem; font-weight:800; color:#37474F; margin:0 0 4px; }
+.dg-load-timeline .dg-subtitle { text-align:center; font-size:0.8rem; color:#78909C; margin:0 0 4px; }
+.dg-load-timeline .click-hint-global { text-align:center; font-size:0.72rem; color:#B0BEC5; margin:0 0 16px; font-style:italic; }
 /* timeline track */
-.dg-load-timeline .timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  position: relative;
-  padding-left: 56px;
-}
+.dg-load-timeline .timeline { display:flex; flex-direction:column; gap:0; position:relative; padding-left:56px; }
 .dg-load-timeline .timeline::before {
-  content: '';
-  position: absolute;
-  left: 22px;
-  top: 24px;
-  bottom: 24px;
-  width: 4px;
-  background: linear-gradient(to bottom, #F9A825, #1E88E5, #8E24AA, #F4511E);
-  border-radius: 4px;
+  content:''; position:absolute; left:22px; top:24px; bottom:24px; width:4px;
+  background:linear-gradient(to bottom,#F9A825,#1E88E5,#8E24AA,#F4511E); border-radius:4px;
 }
-/* each step row */
-.dg-load-timeline .step {
-  display: flex;
-  align-items: flex-start;
-  gap: 0;
-  margin-bottom: 16px;
-  position: relative;
-}
-/* circle */
+.dg-load-timeline .step { display:flex; align-items:flex-start; gap:0; margin-bottom:16px; position:relative; }
 .dg-load-timeline .step-dot {
-  position: absolute;
-  left: -44px;
-  top: 14px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  font-weight: 800;
-  border-width: 3px;
-  border-style: solid;
-  background: #fff;
-  box-shadow: 3px 3px 0 currentColor;
-  flex-shrink: 0;
+  position:absolute; left:-44px; top:14px; width:36px; height:36px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800;
+  border-width:3px; border-style:solid; background:#fff; flex-shrink:0;
 }
-.dg-load-timeline .step-1 .step-dot { border-color:#F9A825; color:#F9A825; box-shadow: 3px 3px 0 #FFD54F; }
-.dg-load-timeline .step-2 .step-dot { border-color:#1E88E5; color:#1E88E5; box-shadow: 3px 3px 0 #90CAF9; }
-.dg-load-timeline .step-3 .step-dot { border-color:#8E24AA; color:#8E24AA; box-shadow: 3px 3px 0 #CE93D8; }
-.dg-load-timeline .step-4 .step-dot { border-color:#F4511E; color:#F4511E; box-shadow: 3px 3px 0 #FFAB91; }
+.dg-load-timeline .step-1 .step-dot { border-color:#F9A825; color:#F9A825; box-shadow:3px 3px 0 #FFD54F; }
+.dg-load-timeline .step-2 .step-dot { border-color:#1E88E5; color:#1E88E5; box-shadow:3px 3px 0 #90CAF9; }
+.dg-load-timeline .step-3 .step-dot { border-color:#8E24AA; color:#8E24AA; box-shadow:3px 3px 0 #CE93D8; }
+.dg-load-timeline .step-4 .step-dot { border-color:#F4511E; color:#F4511E; box-shadow:3px 3px 0 #FFAB91; }
 /* cards */
 .dg-load-timeline .card {
-  flex: 1;
-  border-radius: 18px;
-  padding: 14px 18px;
-  border-width: 3px;
-  border-style: solid;
-  cursor: pointer;
-  position: relative;
-  transition: transform .18s, box-shadow .18s;
+  flex:1; border-radius:18px; padding:14px 18px; border-width:3px; border-style:solid;
+  cursor:pointer; position:relative; transition:transform .18s, box-shadow .18s;
 }
-.dg-load-timeline .card:hover { transform: translateX(4px); }
-.dg-load-timeline .step-1 .card { background:#FFF8E1; border-color:#F9A825; box-shadow: 4px 4px 0 #FFD54F; }
-.dg-load-timeline .step-2 .card { background:#E3F2FD; border-color:#1E88E5; box-shadow: 4px 4px 0 #90CAF9; }
-.dg-load-timeline .step-3 .card { background:#F3E5F5; border-color:#8E24AA; box-shadow: 4px 4px 0 #CE93D8; }
-.dg-load-timeline .step-4 .card { background:#FFF3E0; border-color:#F4511E; box-shadow: 4px 4px 0 #FFAB91; }
-.dg-load-timeline .card-title {
-  font-weight: 800;
-  font-size: 0.95rem;
-  margin: 0 0 6px;
-}
+.dg-load-timeline .card:not(.open):hover { transform:translateX(4px); }
+.dg-load-timeline .step-1 .card { background:#FFF8E1; border-color:#F9A825; box-shadow:4px 4px 0 #FFD54F; }
+.dg-load-timeline .step-2 .card { background:#E3F2FD; border-color:#1E88E5; box-shadow:4px 4px 0 #90CAF9; }
+.dg-load-timeline .step-3 .card { background:#F3E5F5; border-color:#8E24AA; box-shadow:4px 4px 0 #CE93D8; }
+.dg-load-timeline .step-4 .card { background:#FFF3E0; border-color:#F4511E; box-shadow:4px 4px 0 #FFAB91; }
+.dg-load-timeline .card.open { box-shadow:0 6px 24px rgba(0,0,0,0.12) !important; }
+.dg-load-timeline .card-title { font-weight:800; font-size:0.95rem; margin:0 0 6px; }
 .dg-load-timeline .step-1 .card-title { color:#E65100; }
 .dg-load-timeline .step-2 .card-title { color:#0D47A1; }
 .dg-load-timeline .step-3 .card-title { color:#6A1B9A; }
 .dg-load-timeline .step-4 .card-title { color:#BF360C; }
-.dg-load-timeline .card-bullets {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 0.77rem;
-}
+.dg-load-timeline .card-bullets { margin:0; padding:0; list-style:none; font-size:0.77rem; }
 .dg-load-timeline .step-1 .card-bullets { color:#6D4C41; }
 .dg-load-timeline .step-2 .card-bullets { color:#1565C0; }
 .dg-load-timeline .step-3 .card-bullets { color:#4A148C; }
 .dg-load-timeline .step-4 .card-bullets { color:#E64A19; }
 .dg-load-timeline .card-bullets li::before { content:"• "; }
-/* tooltip */
+/* hover tooltip */
 .dg-load-timeline .tip {
-  display: none;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(100% + 10px);
-  background: #FFFDE7;
-  border: 1.5px solid #F9A825;
-  border-radius: 10px;
-  padding: 8px 14px;
-  font-size: 0.75rem;
-  color: #5D4037;
-  white-space: nowrap;
-  z-index: 10;
-  box-shadow: 0 4px 12px #0002;
-  pointer-events: none;
-  text-align: center;
+  display:none; position:absolute; left:50%; transform:translateX(-50%);
+  bottom:calc(100% + 10px); background:#FFFDE7; border:1.5px solid #F9A825;
+  border-radius:10px; padding:8px 14px; font-size:0.75rem; color:#5D4037;
+  white-space:nowrap; z-index:10; box-shadow:0 4px 12px #0002; pointer-events:none; text-align:center;
 }
 .dg-load-timeline .step-2 .tip { border-color:#1E88E5; background:#EBF5FB; color:#0D47A1; }
 .dg-load-timeline .step-3 .tip { border-color:#8E24AA; background:#F3E5F5; color:#4A148C; }
 .dg-load-timeline .step-4 .tip { border-color:#F4511E; background:#FBE9E7; color:#BF360C; }
-.dg-load-timeline .card:hover .tip { display: block; }
-/* connector dots animated */
-@keyframes bounce-down { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
-.dg-load-timeline .connector {
-  display: flex;
-  align-items: center;
-  padding-left: 0;
-  height: 20px;
-  margin-bottom: 0;
+.dg-load-timeline .card:not(.open):hover .tip { display:block; }
+/* explore hint */
+.dg-load-timeline .explore-hint {
+  font-size:0.63rem; position:absolute; bottom:8px; right:10px; opacity:0.55;
+  pointer-events:none; animation:lt-hint-pulse 2.5s ease-in-out infinite;
 }
-.dg-load-timeline .connector span {
-  font-size: 1.1rem;
-  animation: bounce-down .9s ease-in-out infinite;
-  color: #B0BEC5;
+.dg-load-timeline .card.open .explore-hint { display:none; }
+@keyframes lt-hint-pulse { 0%,100%{opacity:0.3} 60%{opacity:0.8} }
+/* expand panel */
+.dg-load-timeline .expand-panel { display:none; border-top:2px dashed #ccc; margin-top:12px; padding-top:12px; font-size:0.8rem; line-height:1.65; }
+.dg-load-timeline .card.open .expand-panel { display:block; }
+.dg-load-timeline .step-1 .expand-panel { border-color:#F9A825; color:#5D4037; }
+.dg-load-timeline .step-2 .expand-panel { border-color:#1E88E5; color:#1A237E; }
+.dg-load-timeline .step-3 .expand-panel { border-color:#8E24AA; color:#4A148C; }
+.dg-load-timeline .step-4 .expand-panel { border-color:#F4511E; color:#BF360C; }
+.dg-load-timeline .expand-panel code {
+  font-family:'Cascadia Code','Consolas',monospace; background:rgba(0,0,0,0.07);
+  padding:1px 5px; border-radius:4px; font-size:0.85em;
 }
-/* did-you-know */
-.dg-load-timeline .dyk {
-  background: #FCE4EC;
-  border: 2px dashed #E91E63;
-  border-radius: 14px;
-  padding: 10px 16px;
-  font-size: 0.78rem;
-  color: #880E4F;
-  box-sizing: border-box;
-  text-align: center;
-  margin-top: 4px;
+.dg-load-timeline .expand-panel pre {
+  background:rgba(0,0,0,0.05); border-left:3px solid currentColor;
+  padding:8px 12px; border-radius:0 8px 8px 0;
+  font-family:'Cascadia Code','Consolas',monospace; font-size:0.76rem;
+  overflow-x:auto; margin:8px 0 4px; white-space:pre;
 }
+.dg-load-timeline .expand-panel .ep-tip {
+  margin-top:8px; padding:6px 10px; border-radius:8px; background:rgba(0,0,0,0.04);
+  font-style:italic; font-size:0.76rem;
+}
+.dg-load-timeline .expand-panel .close-hint { font-size:0.65rem; opacity:0.5; margin-top:10px; text-align:right; font-style:italic; }
+/* animated connector */
+@keyframes lt-bounce-down { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+/* dyk */
+.dg-load-timeline .dyk { background:#FCE4EC; border:2px dashed #E91E63; border-radius:14px; padding:10px 16px; font-size:0.78rem; color:#880E4F; box-sizing:border-box; text-align:center; margin-top:4px; }
 .dg-load-timeline .dyk strong { color:#AD1457; }
-.dg-load-timeline .caption {
-  text-align: center;
-  font-size: 0.74rem;
-  color: #90A4AE;
-  font-style: italic;
-  margin-top: 14px;
-}
+.dg-load-timeline .caption { text-align:center; font-size:0.74rem; color:#90A4AE; font-style:italic; margin-top:14px; }
 </style>
 
 <p class="dg-title">📂 What Gets Loaded When</p>
 <p class="dg-subtitle">Context is added in stages — only what's needed, when it's needed</p>
+<p class="click-hint-global">✨ Click any step to explore in depth</p>
 
 <div class="timeline">
 
@@ -175,6 +103,7 @@
     <div class="step-dot">🟡</div>
     <div class="card">
       <div class="tip">Lightweight — only summaries, not full skill text</div>
+      <span class="explore-hint">click to explore ↓</span>
       <div class="card-title">1. Session starts</div>
       <ul class="card-bullets">
         <li>CLAUDE.md / AGENTS.md loaded (full text)</li>
@@ -182,6 +111,12 @@
         <li>name + description of every skill</li>
         <li style="font-style:italic;opacity:.75">⚡ Keeps startup fast — summaries only</li>
       </ul>
+      <div class="expand-panel">
+        <p>CLAUDE.md is loaded first — it sets global rules every agent must follow: file conventions, tone, what not to do. Then every AGENTS.md entry is scanned: only the <code>name:</code> and <code>description:</code> fields load, not the full body.</p>
+        <p>This keeps startup lightweight. Skill files are <em>not</em> read at all yet — only their names and one-line descriptions.</p>
+        <div class="ep-tip">💡 Write short, specific agent descriptions so Claude can delegate to the right specialist instantly.</div>
+        <div class="close-hint">click again to close ↑</div>
+      </div>
     </div>
   </div>
 
@@ -189,6 +124,7 @@
     <div class="step-dot">🔵</div>
     <div class="card">
       <div class="tip">Each agent has its own isolated context — no memory of siblings</div>
+      <span class="explore-hint">click to explore ↓</span>
       <div class="card-title">2. Task delegated to an agent</div>
       <ul class="card-bullets">
         <li>agent gets a fresh, empty context</li>
@@ -196,6 +132,15 @@
         <li>skills listed in <code style="background:#BBDEFB;padding:1px 4px;border-radius:4px;font-size:.75em;">skills:</code> are preloaded</li>
         <li style="font-style:italic;opacity:.75">🧩 Fully isolated — siblings can't interfere</li>
       </ul>
+      <div class="expand-panel">
+        <p>When Claude decides to delegate, it creates a fresh context — the subagent sees <strong>no memory</strong> of the parent conversation. It receives:</p>
+        <pre>(1) The full text of its own AGENTS.md entry
+(2) CLAUDE.md project rules
+(3) Any skills listed in its skills: field</pre>
+        <p>The subagent's tools are limited to exactly what's declared in <code>tools:</code>. Example: if <code>tools: [read_file, python]</code>, only those two tools are available — bash is blocked even if the harness supports it.</p>
+        <div class="ep-tip">💡 Isolation is a feature: a subagent can't accidentally overwrite a sibling's output.</div>
+        <div class="close-hint">click again to close ↑</div>
+      </div>
     </div>
   </div>
 
@@ -203,6 +148,7 @@
     <div class="step-dot">🟣</div>
     <div class="card">
       <div class="tip">Skills are lazy-loaded — only pay the token cost when used</div>
+      <span class="explore-hint">click to explore ↓</span>
       <div class="card-title">3. A skill is invoked</div>
       <ul class="card-bullets">
         <li>full SKILL.md text loads at that moment</li>
@@ -210,6 +156,12 @@
         <li>keeps context lean until actually needed</li>
         <li style="font-style:italic;opacity:.75">💰 Saves tokens — no cost until needed</li>
       </ul>
+      <div class="expand-panel">
+        <p>A skill is triggered by a line in AGENTS.md like <code>skills: [era5-download]</code>. The full SKILL.md text loads at that moment — it might be 200 lines of detailed ERA5 API instructions and helper scripts.</p>
+        <p>This lazy loading keeps per-agent cost low: a <em>data-fetcher</em> pays for the era5-download skill, but a <em>results-reviewer</em> never does.</p>
+        <div class="ep-tip">💡 A well-written skill file can replace pages of agent instructions — write it once, reuse across all projects.</div>
+        <div class="close-hint">click again to close ↑</div>
+      </div>
     </div>
   </div>
 
@@ -217,6 +169,7 @@
     <div class="step-dot">🟠</div>
     <div class="card">
       <div class="tip">This isolation is what makes agents composable and reusable</div>
+      <span class="explore-hint">click to explore ↓</span>
       <div class="card-title">4. Agent finishes</div>
       <ul class="card-bullets">
         <li>only the final answer returns</li>
@@ -224,6 +177,14 @@
         <li>caller never sees the working context</li>
         <li style="font-style:italic;opacity:.75">🔒 Private by default — clean outputs</li>
       </ul>
+      <div class="expand-panel">
+        <p>The subagent's entire working context — every tool call, every file read, every intermediate thought — is discarded. Only its last assistant message returns to the parent.</p>
+        <p>This is why subagent instructions should ask for structured output:</p>
+        <pre>"Return JSON: {status, files_written, warnings}"</pre>
+        <p>That structured reply is <em>all</em> the parent ever sees — make it count.</p>
+        <div class="ep-tip">💡 Think of a subagent like a function call: inputs in, one clean result out.</div>
+        <div class="close-hint">click again to close ↑</div>
+      </div>
     </div>
   </div>
 
@@ -232,5 +193,17 @@
 <div class="dyk">
   🌟 <strong>Did you know?</strong> A skill's full text might be 2,000 tokens — by lazy-loading, an agent that never needs it saves those tokens entirely!
 </div>
-<p class="caption">Hover each step to learn more · Context grows only as far as the task needs</p>
+<p class="caption">Click each step to explore · Context grows only as far as the task needs</p>
+
+<script>(function(){
+  var root = document.currentScript ? document.currentScript.parentElement : document.querySelector('.dg-load-timeline');
+  root.querySelectorAll('.card').forEach(function(card){
+    card.addEventListener('click', function(e){
+      e.stopPropagation();
+      var wasOpen = card.classList.contains('open');
+      root.querySelectorAll('.card.open').forEach(function(c){ c.classList.remove('open'); });
+      if(!wasOpen) card.classList.add('open');
+    });
+  });
+})();</script>
 </div>

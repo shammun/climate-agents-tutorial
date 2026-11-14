@@ -1,159 +1,106 @@
 <div class="dg dg-building-blocks">
 <style>
 .dg-building-blocks {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  background: #FFFBF0;
-  border-radius: 24px;
-  padding: 28px 20px 20px;
-  max-width: 620px;
-  margin: 0 auto;
-  box-sizing: border-box;
+  font-family:'Segoe UI',system-ui,sans-serif; background:#FFFBF0; border-radius:24px;
+  padding:28px 20px 20px; max-width:620px; margin:0 auto; box-sizing:border-box;
 }
-.dg-building-blocks .dg-title {
-  text-align: center;
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #37474F;
-  margin: 0 0 4px;
-}
-.dg-building-blocks .dg-subtitle {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #78909C;
-  margin: 0 0 20px;
-}
-/* grid of 4 cards stacked */
-.dg-building-blocks .blocks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
+.dg-building-blocks .dg-title { text-align:center; font-size:1.3rem; font-weight:800; color:#37474F; margin:0 0 4px; }
+.dg-building-blocks .dg-subtitle { text-align:center; font-size:0.8rem; color:#78909C; margin:0 0 4px; }
+.dg-building-blocks .click-hint-global { text-align:center; font-size:0.72rem; color:#B0BEC5; margin:0 0 16px; font-style:italic; }
+.dg-building-blocks .blocks-list { display:flex; flex-direction:column; gap:14px; }
 /* each block row */
 .dg-building-blocks .block {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  border-radius: 20px;
-  padding: 14px 18px;
-  border-width: 3px;
-  border-style: solid;
-  cursor: pointer;
-  position: relative;
-  transition: transform .18s, box-shadow .18s;
+  display:flex; align-items:flex-start; gap:14px; border-radius:20px; padding:14px 18px;
+  border-width:3px; border-style:solid; cursor:pointer; position:relative;
+  transition:transform .18s, box-shadow .18s;
 }
-.dg-building-blocks .block:hover { transform: translateX(5px); }
-.dg-building-blocks .block-1 { background:#FFF8E1; border-color:#F9A825; box-shadow: 5px 5px 0 #FFD54F; }
-.dg-building-blocks .block-2 { background:#E3F2FD; border-color:#1E88E5; box-shadow: 5px 5px 0 #90CAF9; }
-.dg-building-blocks .block-3 { background:#F3E5F5; border-color:#8E24AA; box-shadow: 5px 5px 0 #CE93D8; }
-.dg-building-blocks .block-4 { background:#FFF3E0; border-color:#F4511E; box-shadow: 5px 5px 0 #FFAB91; }
+.dg-building-blocks .block:not(.open):hover { transform:translateX(5px); }
+.dg-building-blocks .block-1 { background:#FFF8E1; border-color:#F9A825; box-shadow:5px 5px 0 #FFD54F; }
+.dg-building-blocks .block-2 { background:#E3F2FD; border-color:#1E88E5; box-shadow:5px 5px 0 #90CAF9; }
+.dg-building-blocks .block-3 { background:#F3E5F5; border-color:#8E24AA; box-shadow:5px 5px 0 #CE93D8; }
+.dg-building-blocks .block-4 { background:#FFF3E0; border-color:#F4511E; box-shadow:5px 5px 0 #FFAB91; }
+.dg-building-blocks .block.open { box-shadow:0 6px 24px rgba(0,0,0,0.12) !important; }
 /* number badge */
 .dg-building-blocks .num {
-  min-width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  font-weight: 900;
-  flex-shrink: 0;
-  border-width: 3px;
-  border-style: solid;
+  min-width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:1.1rem; font-weight:900; flex-shrink:0; border-width:3px; border-style:solid;
 }
 .dg-building-blocks .block-1 .num { background:#FFF8E1; border-color:#F9A825; color:#E65100; }
 .dg-building-blocks .block-2 .num { background:#E3F2FD; border-color:#1E88E5; color:#0D47A1; }
 .dg-building-blocks .block-3 .num { background:#F3E5F5; border-color:#8E24AA; color:#6A1B9A; }
 .dg-building-blocks .block-4 .num { background:#FFF3E0; border-color:#F4511E; color:#BF360C; }
-/* text side */
-.dg-building-blocks .block-body { flex: 1; }
-.dg-building-blocks .block-title {
-  font-weight: 800;
-  font-size: 1rem;
-  margin: 0 0 4px;
-}
+.dg-building-blocks .block-body { flex:1; min-width:0; }
+.dg-building-blocks .block-title { font-weight:800; font-size:1rem; margin:0 0 4px; }
 .dg-building-blocks .block-1 .block-title { color:#E65100; }
 .dg-building-blocks .block-2 .block-title { color:#0D47A1; }
 .dg-building-blocks .block-3 .block-title { color:#6A1B9A; }
 .dg-building-blocks .block-4 .block-title { color:#BF360C; }
 .dg-building-blocks .block-files {
-  font-size: 0.74rem;
-  font-family: 'Cascadia Code', 'Consolas', monospace;
-  padding: 3px 8px;
-  border-radius: 6px;
-  display: inline-block;
-  margin-bottom: 6px;
+  font-size:0.74rem; font-family:'Cascadia Code','Consolas',monospace;
+  padding:3px 8px; border-radius:6px; display:inline-block; margin-bottom:6px;
 }
 .dg-building-blocks .block-1 .block-files { background:#FFF3E0; color:#BF360C; }
 .dg-building-blocks .block-2 .block-files { background:#BBDEFB; color:#0D47A1; }
 .dg-building-blocks .block-3 .block-files { background:#E1BEE7; color:#4A148C; }
 .dg-building-blocks .block-4 .block-files { background:#FFE0B2; color:#BF360C; }
-.dg-building-blocks .block-bullets {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 0.77rem;
-}
+.dg-building-blocks .block-bullets { margin:0; padding:0; list-style:none; font-size:0.77rem; }
 .dg-building-blocks .block-1 .block-bullets { color:#6D4C41; }
 .dg-building-blocks .block-2 .block-bullets { color:#1565C0; }
 .dg-building-blocks .block-3 .block-bullets { color:#4A148C; }
 .dg-building-blocks .block-4 .block-bullets { color:#E64A19; }
 .dg-building-blocks .block-bullets li::before { content:"• "; }
-/* when-loaded badge */
-.dg-building-blocks .when {
-  font-size: 0.68rem;
-  font-style: italic;
-  opacity: .7;
-  margin-top: 4px;
-}
-/* tooltip */
+.dg-building-blocks .when { font-size:0.68rem; font-style:italic; opacity:.7; margin-top:4px; }
+/* hover tooltip */
 .dg-building-blocks .tip {
-  display: none;
-  position: absolute;
-  right: 14px;
-  top: calc(100% + 8px);
-  background: #FFFDE7;
-  border: 1.5px solid #F9A825;
-  border-radius: 10px;
-  padding: 8px 14px;
-  font-size: 0.75rem;
-  color: #5D4037;
-  max-width: 280px;
-  z-index: 10;
-  box-shadow: 0 4px 12px #0002;
-  pointer-events: none;
+  display:none; position:absolute; right:14px; top:calc(100% + 8px); background:#FFFDE7;
+  border:1.5px solid #F9A825; border-radius:10px; padding:8px 14px; font-size:0.75rem;
+  color:#5D4037; max-width:280px; z-index:10; box-shadow:0 4px 12px #0002; pointer-events:none;
 }
 .dg-building-blocks .block-2 .tip { border-color:#1E88E5; background:#EBF5FB; color:#0D47A1; }
 .dg-building-blocks .block-3 .tip { border-color:#8E24AA; background:#F3E5F5; color:#4A148C; }
 .dg-building-blocks .block-4 .tip { border-color:#F4511E; background:#FBE9E7; color:#BF360C; }
-.dg-building-blocks .block:hover .tip { display: block; }
+.dg-building-blocks .block:not(.open):hover .tip { display:block; }
+/* explore hint */
+.dg-building-blocks .explore-hint {
+  font-size:0.63rem; position:absolute; bottom:8px; right:10px; opacity:0.55;
+  pointer-events:none; animation:bb-hint-pulse 2.5s ease-in-out infinite;
+}
+.dg-building-blocks .block.open .explore-hint { display:none; }
+@keyframes bb-hint-pulse { 0%,100%{opacity:0.3} 60%{opacity:0.8} }
+/* expand panel */
+.dg-building-blocks .expand-panel { display:none; border-top:2px dashed #ccc; margin-top:12px; padding-top:12px; font-size:0.8rem; line-height:1.65; }
+.dg-building-blocks .block.open .expand-panel { display:block; }
+.dg-building-blocks .block-1 .expand-panel { border-color:#F9A825; color:#5D4037; }
+.dg-building-blocks .block-2 .expand-panel { border-color:#1E88E5; color:#1A237E; }
+.dg-building-blocks .block-3 .expand-panel { border-color:#8E24AA; color:#4A148C; }
+.dg-building-blocks .block-4 .expand-panel { border-color:#F4511E; color:#BF360C; }
+.dg-building-blocks .expand-panel pre {
+  background:rgba(0,0,0,0.05); border-left:3px solid currentColor;
+  padding:8px 12px; border-radius:0 8px 8px 0;
+  font-family:'Cascadia Code','Consolas',monospace; font-size:0.76rem;
+  overflow-x:auto; margin:8px 0 4px; white-space:pre;
+}
+.dg-building-blocks .expand-panel code {
+  font-family:'Cascadia Code','Consolas',monospace; background:rgba(0,0,0,0.07);
+  padding:1px 5px; border-radius:4px; font-size:0.85em;
+}
+.dg-building-blocks .expand-panel .ep-tip { margin-top:8px; padding:6px 10px; border-radius:8px; background:rgba(0,0,0,0.04); font-style:italic; font-size:0.76rem; }
+.dg-building-blocks .expand-panel .close-hint { font-size:0.65rem; opacity:0.5; margin-top:10px; text-align:right; font-style:italic; }
 /* dyk */
-.dg-building-blocks .dyk {
-  background: #FCE4EC;
-  border: 2px dashed #E91E63;
-  border-radius: 14px;
-  padding: 10px 16px;
-  font-size: 0.78rem;
-  color: #880E4F;
-  text-align: center;
-  margin-top: 14px;
-}
+.dg-building-blocks .dyk { background:#FCE4EC; border:2px dashed #E91E63; border-radius:14px; padding:10px 16px; font-size:0.78rem; color:#880E4F; text-align:center; margin-top:14px; }
 .dg-building-blocks .dyk strong { color:#AD1457; }
-.dg-building-blocks .caption {
-  text-align: center;
-  font-size: 0.74rem;
-  color: #90A4AE;
-  font-style: italic;
-  margin-top: 14px;
-}
+.dg-building-blocks .caption { text-align:center; font-size:0.74rem; color:#90A4AE; font-style:italic; margin-top:14px; }
 </style>
 
 <p class="dg-title">🏗️ The Four Building Blocks</p>
 <p class="dg-subtitle">Every AI coding tool uses these same four ideas — only the filenames differ</p>
+<p class="click-hint-global">✨ Click any block to see a real example</p>
 
 <div class="blocks-list">
 
   <div class="block block-1">
     <div class="tip">💡 Think of it as the employee handbook — everyone reads it on day one, every session.</div>
+    <span class="explore-hint">click to explore ↓</span>
     <div class="num">📋</div>
     <div class="block-body">
       <div class="block-title">1. Project rules</div>
@@ -164,11 +111,23 @@
         <li>every agent reads this at the start</li>
       </ul>
       <div class="when">⏰ loaded: every session, every agent</div>
+      <div class="expand-panel">
+        <p>Example CLAUDE.md rules that apply to every agent in the project:</p>
+        <pre>Never delete files in data/raw/.
+All figures must be saved to figures/
+  with an ISO-date prefix: YYYY-MM-DD_name.png
+Use CF conventions for all NetCDF output.
+Return structured JSON in the final answer.</pre>
+        <p>These rules <strong>cannot be overridden</strong> by individual agents — they're the constitution of your project.</p>
+        <div class="ep-tip">💡 Keep project rules short and absolute. If a rule has exceptions, it doesn't belong here — put it in the agent definition instead.</div>
+        <div class="close-hint">click again to close ↑</div>
+      </div>
     </div>
   </div>
 
   <div class="block block-2">
     <div class="tip">💡 Like a job description — written once, re-used every time that specialist is needed.</div>
+    <span class="explore-hint">click to explore ↓</span>
     <div class="num">🤖</div>
     <div class="block-body">
       <div class="block-title">2. Agent definitions</div>
@@ -179,11 +138,26 @@
         <li>keeps specialists focused and testable</li>
       </ul>
       <div class="when">⏰ loaded: only when that agent is delegated to</div>
+      <div class="expand-panel">
+        <p>Example <code>.claude/agents/data-fetcher.md</code>:</p>
+        <pre>name: data-fetcher
+description: Downloads ERA5 reanalysis via the CDS API
+tools: [bash, write_file]
+skills: [era5-download]
+---
+You download ERA5 pressure-level data for the
+date range the caller specifies.
+Always save to data/raw/era5/ as NetCDF4.</pre>
+        <p>The frontmatter (above <code>---</code>) is machine-readable. The body (below) is the LLM's instruction manual.</p>
+        <div class="ep-tip">💡 The description field is what Claude reads to decide <em>which</em> agent to delegate to — make it precise and distinctive.</div>
+        <div class="close-hint">click again to close ↑</div>
+      </div>
     </div>
   </div>
 
   <div class="block block-3">
     <div class="tip">💡 Skills keep agents small and composable — load only what you need, pay only those tokens.</div>
+    <span class="explore-hint">click to explore ↓</span>
     <div class="num">🔧</div>
     <div class="block-body">
       <div class="block-title">3. Skills</div>
@@ -194,11 +168,23 @@
         <li>examples: era5-download, netcdf-conventions</li>
       </ul>
       <div class="when">⏰ loaded: only when explicitly invoked</div>
+      <div class="expand-panel">
+        <p>Add <code>skills: [era5-download]</code> to an agent's AGENTS.md entry. The SKILL.md file loads at that moment and might contain:</p>
+        <pre>- Full CDS API authentication steps
+- cdsapi Python code templates
+- Variable name mappings (t2m, u10, v10…)
+- Instructions for handling API rate limits
+- Helper scripts: download_era5.py</pre>
+        <p>The skill author maintains it once; every agent that lists it gets the latest version automatically.</p>
+        <div class="ep-tip">💡 Skills are reusable across projects. A well-written era5-download skill can serve a dozen different projects with no changes.</div>
+        <div class="close-hint">click again to close ↑</div>
+      </div>
     </div>
   </div>
 
   <div class="block block-4">
     <div class="tip">💡 The safety net — even a rogue agent can't break these hard limits.</div>
+    <span class="explore-hint">click to explore ↓</span>
     <div class="num">🔒</div>
     <div class="block-body">
       <div class="block-title">4. Permissions</div>
@@ -209,6 +195,18 @@
         <li>applied before every tool call, always</li>
       </ul>
       <div class="when">⏰ applied: always, before every tool call</div>
+      <div class="expand-panel">
+        <p>Example <code>.claude/settings.json</code>:</p>
+        <pre>{
+  "allowedTools": ["bash","read_file",
+                   "write_file","python"],
+  "blockedPaths": ["data/raw"],
+  "maxConcurrentAgents": 4
+}</pre>
+        <p>The <code>blockedPaths</code> setting prevents any agent from modifying raw data, even if it tries. This is enforced by the harness <strong>before</strong> the tool call runs — the agent never even gets to attempt it.</p>
+        <div class="ep-tip">💡 Always block your raw data directory. It's the best insurance against an agent accidentally overwriting a 50 GB download.</div>
+        <div class="close-hint">click again to close ↑</div>
+      </div>
     </div>
   </div>
 
@@ -217,5 +215,17 @@
 <div class="dyk">
   🌟 <strong>Did you know?</strong> The same four-block structure works in Claude Code, Codex, Gemini CLI, and others — learn it once and you understand them all!
 </div>
-<p class="caption">Hover each block to learn more · Same ideas in every AI coding tool — only filenames differ</p>
+<p class="caption">Click each block to see a real example · Same ideas in every AI coding tool — only filenames differ</p>
+
+<script>(function(){
+  var root = document.currentScript ? document.currentScript.parentElement : document.querySelector('.dg-building-blocks');
+  root.querySelectorAll('.block').forEach(function(block){
+    block.addEventListener('click', function(e){
+      e.stopPropagation();
+      var wasOpen = block.classList.contains('open');
+      root.querySelectorAll('.block.open').forEach(function(b){ b.classList.remove('open'); });
+      if(!wasOpen) block.classList.add('open');
+    });
+  });
+})();</script>
 </div>
