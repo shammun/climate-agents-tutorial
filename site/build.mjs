@@ -306,6 +306,17 @@ async function main() {
   /* copy assets */
   copyFileSync(join(SITE, 'styles.css'), join(DIST, 'assets', 'styles.css'));
   copyFileSync(join(SITE, 'app.js'), join(DIST, 'assets', 'app.js'));
+  /* static assets (globe texture etc.) */
+  const assetsDir = join(SITE, 'assets');
+  if (existsSync(assetsDir)) {
+    for (const name of readdirSync(assetsDir)) {
+      if (statSync(join(assetsDir, name)).isFile()) copyFileSync(join(assetsDir, name), join(DIST, 'assets', name));
+    }
+  }
+  /* Three.js (ES module, loaded on demand by the hero globe) */
+  const threeSrc = join(ROOT, 'node_modules', 'three', 'build', 'three.module.min.js');
+  if (existsSync(threeSrc)) copyFileSync(threeSrc, join(DIST, 'assets', 'three.module.min.js'));
+  else console.warn('  WARNING: three.module.min.js not found; the hero globe will not load');
   console.log('  copied assets');
 
   /* copy pre-rendered video if it exists */
