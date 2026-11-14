@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, extname, relative, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { createHash } from 'crypto';
 import { marked } from 'marked';
 import { createHighlighter } from 'shiki';
 
@@ -301,6 +302,12 @@ async function main() {
 
   /* load shell */
   let shell = readText(join(SITE, 'template', 'shell.html'));
+  // Cache-busting: GitHub Pages lets browsers cache files for 10 minutes, so
+  // add a short content hash; a changed file then gets a new URL at once.
+  const version = f => createHash('sha256').update(readFileSync(join(SITE, f))).digest('hex').slice(0, 10);
+  shell = shell
+    .replace('href="assets/styles.css"', `href="assets/styles.css?v=${version('styles.css')}"`)
+    .replace('src="assets/app.js"', `src="assets/app.js?v=${version('app.js')}"`);
   shell = shell
     .replace(/__CONTENT__/g, contentHtml)
     .replace(/__TOC__/g, tocHtml)
