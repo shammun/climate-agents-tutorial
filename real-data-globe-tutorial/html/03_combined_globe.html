@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combined Wind + Ocean Currents Globe</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060d1a; color: #e0eaf8; font-family: system-ui, sans-serif; overflow: hidden; }
+  canvas { display: block; }
+
+  #ui {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px; background: rgba(6,13,26,0.78);
+    backdrop-filter: blur(6px); z-index: 10;
+    font-size: 13px; gap: 10px; flex-wrap: wrap;
+  }
+  #ui h1 { font-size: 15px; font-weight: 600; white-space: nowrap; }
+  #meta  { color: #8ab4d8; font-size: 11px; }
+  #controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
+    color: #e0eaf8; border-radius: 6px; padding: 4px 10px;
+    cursor: pointer; font-size: 12px; transition: background 0.15s;
+  }
+  .btn:hover { background: rgba(255,255,255,0.18); }
+  .btn.active { background: rgba(0,210,180,0.22); border-color: #00d2b4; color: #00d2b4; }
+  .btn.active-orange { background: rgba(255,120,0,0.22); border-color: #ff7800; color: #ffaa44; }
+
+  #legend {
+    position: fixed; bottom: 18px; left: 18px; z-index: 10;
+    background: rgba(6,13,26,0.78); border-radius: 8px;
+    padding: 10px 14px; font-size: 12px; backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  #legend h3 { font-size: 11px; color: #8ab4d8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em; }
+  .l-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .l-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  #status { position: fixed; bottom: 18px; right: 18px; z-index: 10; font-size: 12px; color: #8ab4d8; pointer-events: none; }
+
+  #loading {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    font-size: 14px; color: #8ab4d8; z-index: 20;
+  }
+</style>
+</head>
+<body>
+<div id="ui">
+  <div>
+    <h1>Winds + Ocean Currents</h1>
+    <div id="meta">loading…</div>
+  </div>
+  <div id="controls">
+    <button class="btn active"        id="btnPlay">Pause</button>
+    <button class="btn active"        id="btnWind">Wind on</button>
+    <button class="btn active-orange" id="btnCurrent">Currents on</button>
+    <button class="btn" id="btnFaster">Faster</button>
+    <button class="btn" id="btnSlower">Slower</button>
+    <button class="btn" id="btnReset">Reset</button>
+  </div>
+</div>
+<div id="legend">
+  <h3>Layers</h3>
+  <div class="l-row"><div class="l-dot" style="background:#00d2b4"></div><span>Atmospheric wind (ERA5/NCEP)</span></div>
+  <div class="l-row"><div class="l-dot" style="background:#ff7800"></div><span>Ocean current (GODAS)</span></div>
+</div>
+<div id="status">loading…</div>
+<div id="loading">Loading data…</div>
+<canvas id="c"></canvas>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.min.js';
+
+const WINDS_URL    = '../data/winds.json';
+const CURRENTS_URL = '../data/currents.json';
+
+// ── scene ─────────────────────────────────────────────────────────────────
+const canvas   = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(0, 0, 2.6);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const sun = new THREE.DirectionalLight(0xffffff, 0.7);
+sun.position.set(3, 2, 2);
+scene.add(sun);
+
+const GLOBE_R = 1.0;
+const globe = new THREE.Mesh(
+  new THREE.SphereGeometry(GLOBE_R, 64, 64),
+  new THREE.MeshPhongMaterial({ color: 0x080f1e, emissive: 0x030810, specular: 0x1a3355, shininess: 25 }),
+);
+scene.add(globe);
+scene.add(new THREE.Mesh(
+  new THREE.SphereGeometry(GLOBE_R * 1.03, 32, 32),
+  new THREE.MeshBasicMaterial({ color: 0x002244, transparent: true, opacity: 0.05, side: THREE.BackSide }),
+));
+
+// ── drag / zoom ───────────────────────────────────────────────────────────
+const rot = { x: 0.2, y: 0 };
+let isDragging = false, lastX = 0, lastY = 0;
+canvas.addEventListener('mousedown', e  => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+canvas.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  rot.y += (e.clientX - lastX) * 0.005;
+  rot.x = Math.max(-1.4, Math.min(1.4, rot.x + (e.clientY - lastY) * 0.005));
+  lastX = e.clientX; lastY = e.clientY;
+});
+window.addEventListener('mouseup', () => isDragging = false);
+canvas.addEventListener('wheel', e => {
+  camera.position.z = Math.max(1.4, Math.min(5, camera.position.z + e.deltaY * 0.002));
+  e.preventDefault();
+}, { passive: false });
+function resize() {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize); resize();
+
+// ── shared utilities ──────────────────────────────────────────────────────
+const NLAT = 181, NLON = 360;
+
+function llToXYZ(lat, lon, r) {
+  const phi   = (90 - lat) * Math.PI / 180;
+  const theta = lon        * Math.PI / 180;
+  return new THREE.Vector3(
+    r * Math.sin(phi) * Math.cos(theta),
+    r * Math.cos(phi),
+    r * Math.sin(phi) * Math.sin(theta),
+  );
+}
+
+function sampleField(uF, vF, lat, lon) {
+  const latIdx = (lat + 90) / 180 * (NLAT - 1);
+  const lonIdx = ((lon % 360 + 360) % 360) / 359 * (NLON - 1);
+  const li = Math.floor(latIdx), lf = latIdx - li;
+  const lo = Math.floor(lonIdx), lof = lonIdx - lo;
+  const li1 = Math.min(li + 1, NLAT - 1);
+  const lo1 = (lo + 1) % NLON;
+  const idx = r => c => r * NLON + c;
+  const u = (1-lf)*(1-lof)*uF[idx(li)(lo)]  + (1-lf)*lof*uF[idx(li)(lo1)] +
+              lf*(1-lof)*uF[idx(li1)(lo)] + lf*lof*uF[idx(li1)(lo1)];
+  const v = (1-lf)*(1-lof)*vF[idx(li)(lo)]  + (1-lf)*lof*vF[idx(li)(lo1)] +
+              lf*(1-lof)*vF[idx(li1)(lo)] + lf*lof*vF[idx(li1)(lo1)];
+  return [u, v];
+}
+
+// ── layer factory ─────────────────────────────────────────────────────────
+function makeLayer({ N, maxAge, heightOffset, uField, vField, speedMax, colorFn, dtScale }) {
+  const positions = new Float32Array(N * 3);
+  const ages      = new Float32Array(N);
+  const posArr    = new Float32Array(N * 3);
+  const colArr    = new Float32Array(N * 3);
+
+  function resetParticle(i) {
+    const phi   = Math.acos(2 * Math.random() - 1);
+    const theta = Math.random() * 2 * Math.PI;
+    positions[i*3]   = 90  - phi   * 180 / Math.PI;
+    positions[i*3+1] = theta * 180 / Math.PI;
+    ages[i] = Math.random() * maxAge;
+  }
+  for (let i = 0; i < N; i++) resetParticle(i);
+
+  for (let i = 0; i < N; i++) {
+    const p = llToXYZ(positions[i*3], positions[i*3+1], GLOBE_R + heightOffset);
+    posArr[i*3] = p.x; posArr[i*3+1] = p.y; posArr[i*3+2] = p.z;
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(colArr, 3));
+  const mat  = new THREE.PointsMaterial({ size: 0.006, vertexColors: true, transparent: true, opacity: 0.85, sizeAttenuation: true });
+  const mesh = new THREE.Points(geo, mat);
+  scene.add(mesh);
+
+  function step(speedScale) {
+    const pa = geo.getAttribute('position');
+    const ca = geo.getAttribute('color');
+    for (let i = 0; i < N; i++) {
+      ages[i]++;
+      if (ages[i] > maxAge) resetParticle(i);
+      let lat = positions[i*3], lon = positions[i*3+1];
+      const [u, v] = sampleField(uField, vField, lat, lon);
+      const spd    = Math.sqrt(u*u + v*v);
+      const cosLat = Math.cos(lat * Math.PI / 180);
+      lat += v * dtScale * speedScale;
+      lon  = ((lon + (cosLat > 0.02 ? u * dtScale * speedScale / cosLat : 0)) + 360) % 360;
+      if (lat > 90 || lat < -90) { ages[i] = maxAge + 1; continue; }
+      positions[i*3] = lat; positions[i*3+1] = lon;
+      const p = llToXYZ(lat, lon, GLOBE_R + heightOffset);
+      pa.setXYZ(i, p.x, p.y, p.z);
+      const fade = 1 - ages[i] / maxAge;
+      const c    = colorFn(spd, speedMax);
+      ca.setXYZ(i, c.r * fade, c.g * fade, c.b * fade);
+    }
+    pa.needsUpdate = true; ca.needsUpdate = true;
+  }
+
+  return { mesh, step };
+}
+
+// ── colour functions ──────────────────────────────────────────────────────
+function windColor(spd, spdMax) {
+  const t  = Math.min(1, spd / (spdMax * 0.6));
+  if (t < 0.5) {
+    const a = t * 2;
+    return { r: a * 0.0, g: a * 0.82, b: a * 0.70 };
+  }
+  const a = (t - 0.5) * 2;
+  return { r: a, g: 0.82 + a * 0.18, b: 0.70 + a * 0.30 };
+}
+function currentColor(spd, spdMax) {
+  const STOPS = [
+    [0.00, 0.00, 0.60, 0.80],
+    [0.35, 0.10, 0.30, 1.00],
+    [0.70, 1.00, 0.47, 0.00],
+    [1.00, 1.00, 0.80, 0.00],
+  ];
+  const t = Math.min(1, spd / (spdMax * 0.7));
+  let lo = STOPS[0], hi = STOPS[STOPS.length - 1];
+  for (let j = 0; j < STOPS.length - 1; j++) {
+    if (t >= STOPS[j][0] && t <= STOPS[j+1][0]) { lo = STOPS[j]; hi = STOPS[j+1]; break; }
+  }
+  const a = (t - lo[0]) / Math.max(1e-6, hi[0] - lo[0]);
+  return { r: lo[1] + a*(hi[1]-lo[1]), g: lo[2] + a*(hi[2]-lo[2]), b: lo[3] + a*(hi[3]-lo[3]) };
+}
+
+// ── load both datasets ────────────────────────────────────────────────────
+let loaded = 0, windLayer, currentLayer, animating = true, speedScale = 1.0;
+let showWind = true, showCurrent = true;
+
+function checkBothLoaded() {
+  loaded++;
+  if (loaded < 2) return;
+  document.getElementById('loading').style.display = 'none';
+  updateStatus();
+  animate();
+}
+
+let windMeta = null, currMeta = null;
+function updateMeta() {
+  if (!windMeta || !currMeta) return;
+  document.getElementById('meta').textContent =
+    `Winds: ${windMeta.source} ${windMeta.year}  ·  Currents: ${currMeta.source} ${currMeta.year}`;
+}
+function updateStatus() {
+  const wn = windLayer ? windLayer.N : 0;
+  const cn = currentLayer ? currentLayer.N : 0;
+  document.getElementById('status').textContent =
+    `${showWind ? wn : 0} wind + ${showCurrent ? cn : 0} current particles`;
+}
+
+fetch(WINDS_URL)
+  .then(r => { if (!r.ok) throw new Error(`winds: HTTP ${r.status}`); return r.json(); })
+  .then(data => {
+    windMeta = data; updateMeta();
+    windLayer = { ...makeLayer({
+      N: 700, maxAge: 120, heightOffset: 0.0025,
+      uField: data.uField, vField: data.vField, speedMax: data.speedMax,
+      colorFn: windColor, dtScale: 0.08,
+    }), N: 700 };
+    checkBothLoaded();
+  })
+  .catch(err => { document.getElementById('meta').textContent = `Error (winds): ${err.message}`; console.error(err); });
+
+fetch(CURRENTS_URL)
+  .then(r => { if (!r.ok) throw new Error(`currents: HTTP ${r.status}`); return r.json(); })
+  .then(data => {
+    currMeta = data; updateMeta();
+    currentLayer = { ...makeLayer({
+      N: 400, maxAge: 160, heightOffset: 0.001,
+      uField: data.uField, vField: data.vField, speedMax: data.speedMax,
+      colorFn: currentColor, dtScale: 0.12,
+    }), N: 400 };
+    checkBothLoaded();
+  })
+  .catch(err => { document.getElementById('meta').textContent = `Error (currents): ${err.message}`; console.error(err); });
+
+function animate() {
+  requestAnimationFrame(animate);
+  globe.rotation.x = rot.x; globe.rotation.y = rot.y;
+  if (windLayer)    { windLayer.mesh.rotation.x    = rot.x; windLayer.mesh.rotation.y    = rot.y; }
+  if (currentLayer) { currentLayer.mesh.rotation.x = rot.x; currentLayer.mesh.rotation.y = rot.y; }
+  if (animating) {
+    if (windLayer    && showWind)    windLayer.step(speedScale);
+    if (currentLayer && showCurrent) currentLayer.step(speedScale);
+  }
+  renderer.render(scene, camera);
+}
+
+// ── controls ──────────────────────────────────────────────────────────────
+document.getElementById('btnPlay').addEventListener('click', function() {
+  animating = !animating;
+  this.textContent = animating ? 'Pause' : 'Play';
+  this.classList.toggle('active', animating);
+});
+document.getElementById('btnWind').addEventListener('click', function() {
+  showWind = !showWind;
+  if (windLayer) windLayer.mesh.visible = showWind;
+  this.textContent = showWind ? 'Wind on' : 'Wind off';
+  this.classList.toggle('active', showWind);
+  updateStatus();
+});
+document.getElementById('btnCurrent').addEventListener('click', function() {
+  showCurrent = !showCurrent;
+  if (currentLayer) currentLayer.mesh.visible = showCurrent;
+  this.textContent = showCurrent ? 'Currents on' : 'Currents off';
+  this.classList.toggle('active-orange', showCurrent);
+  updateStatus();
+});
+document.getElementById('btnFaster').addEventListener('click', () => { speedScale = Math.min(4, speedScale * 1.4); });
+document.getElementById('btnSlower').addEventListener('click', () => { speedScale = Math.max(0.1, speedScale / 1.4); });
+document.getElementById('btnReset').addEventListener('click',  () => { rot.x = 0.2; rot.y = 0; camera.position.z = 2.6; });
+</script>
+</body>
+</html>
