@@ -19,7 +19,8 @@
 .dg-building-blocks .block-2 { background:#E3F2FD; border-color:#1E88E5; box-shadow:5px 5px 0 #90CAF9; }
 .dg-building-blocks .block-3 { background:#F3E5F5; border-color:#8E24AA; box-shadow:5px 5px 0 #CE93D8; }
 .dg-building-blocks .block-4 { background:#FFF3E0; border-color:#F4511E; box-shadow:5px 5px 0 #FFAB91; }
-.dg-building-blocks .block.open { box-shadow:0 6px 24px rgba(0,0,0,0.12) !important; }
+/* z-index stacking fix: open block renders above siblings */
+.dg-building-blocks .block.open { box-shadow:0 6px 24px rgba(0,0,0,0.12) !important; z-index:20; }
 /* number badge */
 .dg-building-blocks .num {
   min-width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
@@ -50,15 +51,18 @@
 .dg-building-blocks .block-4 .block-bullets { color:#E64A19; }
 .dg-building-blocks .block-bullets li::before { content:"• "; }
 .dg-building-blocks .when { font-size:0.68rem; font-style:italic; opacity:.7; margin-top:4px; }
-/* hover tooltip */
+/* hover tooltip — elevated z-index to stay above subsequent blocks */
 .dg-building-blocks .tip {
-  display:none; position:absolute; right:14px; top:calc(100% + 8px); background:#FFFDE7;
-  border:1.5px solid #F9A825; border-radius:10px; padding:8px 14px; font-size:0.75rem;
-  color:#5D4037; max-width:280px; z-index:10; box-shadow:0 4px 12px #0002; pointer-events:none;
+  display:none; position:absolute; left:14px; top:calc(100% + 8px); background:#FFFDE7;
+  border:1.5px solid #F9A825; border-radius:12px; padding:10px 16px; font-size:0.75rem;
+  color:#5D4037; max-width:320px; z-index:50; box-shadow:0 4px 12px #0003; pointer-events:none;
+  line-height:1.55;
 }
 .dg-building-blocks .block-2 .tip { border-color:#1E88E5; background:#EBF5FB; color:#0D47A1; }
 .dg-building-blocks .block-3 .tip { border-color:#8E24AA; background:#F3E5F5; color:#4A148C; }
 .dg-building-blocks .block-4 .tip { border-color:#F4511E; background:#FBE9E7; color:#BF360C; }
+.dg-building-blocks .tip ul { margin:5px 0 0; padding-left:14px; font-size:0.73rem; }
+.dg-building-blocks .tip li { margin-bottom:2px; }
 .dg-building-blocks .block:not(.open):hover .tip { display:block; }
 /* explore hint */
 .dg-building-blocks .explore-hint {
@@ -84,8 +88,17 @@
   font-family:'Cascadia Code','Consolas',monospace; background:rgba(0,0,0,0.07);
   padding:1px 5px; border-radius:4px; font-size:0.85em;
 }
-.dg-building-blocks .expand-panel .ep-tip { margin-top:8px; padding:6px 10px; border-radius:8px; background:rgba(0,0,0,0.04); font-style:italic; font-size:0.76rem; }
+.dg-building-blocks .expand-panel .ep-tip { margin-top:8px; padding:8px 12px; border-radius:8px; background:rgba(0,0,0,0.04); font-style:italic; font-size:0.76rem; }
+.dg-building-blocks .expand-panel .ep-fail { margin-top:8px; padding:8px 12px; border-radius:8px; background:rgba(244,81,30,0.07); font-size:0.76rem; border-left:3px solid currentColor; }
+.dg-building-blocks .expand-panel .ep-fail strong { display:block; margin-bottom:3px; font-size:0.74rem; text-transform:uppercase; letter-spacing:.04em; opacity:.8; }
 .dg-building-blocks .expand-panel .close-hint { font-size:0.65rem; opacity:0.5; margin-top:10px; text-align:right; font-style:italic; }
+/* grid inside expand for two-column examples */
+.dg-building-blocks .expand-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0 4px; }
+@media(max-width:460px){ .dg-building-blocks .expand-grid { grid-template-columns:1fr; } }
+.dg-building-blocks .eg-box { background:rgba(0,0,0,0.04); border-radius:8px; padding:9px 12px; }
+.dg-building-blocks .eg-box h5 { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin:0 0 5px; opacity:.75; }
+.dg-building-blocks .eg-box ul { margin:0; padding-left:13px; font-size:0.77rem; }
+.dg-building-blocks .eg-box li { margin-bottom:2px; }
 /* dyk */
 .dg-building-blocks .dyk { background:#FCE4EC; border:2px dashed #E91E63; border-radius:14px; padding:10px 16px; font-size:0.78rem; color:#880E4F; text-align:center; margin-top:14px; }
 .dg-building-blocks .dyk strong { color:#AD1457; }
@@ -94,12 +107,20 @@
 
 <p class="dg-title">🏗️ The Four Building Blocks</p>
 <p class="dg-subtitle">Every AI coding tool uses these same four ideas — only the filenames differ</p>
-<p class="click-hint-global">✨ Click any block to see a real example</p>
+<p class="click-hint-global">✨ Hover to preview · Click any block to see a real example</p>
 
 <div class="blocks-list">
 
   <div class="block block-1">
-    <div class="tip">💡 Think of it as the employee handbook — everyone reads it on day one, every session.</div>
+    <div class="tip">
+      <strong>📋 Project rules</strong> — the constitution of your project
+      <ul>
+        <li>Loaded at the very start of every session, before any agent runs</li>
+        <li>Sets tone, file naming conventions, what agents must never do</li>
+        <li>Cannot be overridden by individual agents — it is the global law</li>
+        <li>Keep it short (&lt;100 lines) and absolute — no "usually" or "try to"</li>
+      </ul>
+    </div>
     <span class="explore-hint">click to explore ↓</span>
     <div class="num">📋</div>
     <div class="block-body">
@@ -112,13 +133,38 @@
       </ul>
       <div class="when">⏰ loaded: every session, every agent</div>
       <div class="expand-panel">
-        <p>Example CLAUDE.md rules that apply to every agent in the project:</p>
-        <pre>Never delete files in data/raw/.
+        <p>Think of it as the employee handbook — everyone reads it on day one, every session, with no exceptions. For a climate data project, it typically contains:</p>
+        <pre>## Project rules (CLAUDE.md)
+
+Never delete files in data/raw/ — treat them as immutable.
 All figures must be saved to figures/
   with an ISO-date prefix: YYYY-MM-DD_name.png
 Use CF conventions for all NetCDF output.
-Return structured JSON in the final answer.</pre>
-        <p>These rules <strong>cannot be overridden</strong> by individual agents — they're the constitution of your project.</p>
+Return structured JSON in the final answer
+  so other agents can parse your result.
+When a QC check returns FAIL, stop and report
+  — do not try to fix or work around it.</pre>
+        <div class="expand-grid">
+          <div class="eg-box">
+            <h5>✅ Good rules</h5>
+            <ul>
+              <li>Absolute: "Never overwrite raw data"</li>
+              <li>Short: one clear sentence each</li>
+              <li>Structural: naming, paths, formats</li>
+              <li>Universal: apply to ALL agents</li>
+            </ul>
+          </div>
+          <div class="eg-box">
+            <h5>❌ Bad rules</h5>
+            <ul>
+              <li>Vague: "Try to be careful with data"</li>
+              <li>Domain-specific: belongs in an agent def</li>
+              <li>Long paragraphs — agents miss them</li>
+              <li>Contradictory rules</li>
+            </ul>
+          </div>
+        </div>
+        <p>These rules <strong>cannot be overridden</strong> by individual agents — they are the constitution of your project. Write them once and leave them alone.</p>
         <div class="ep-tip">💡 Keep project rules short and absolute. If a rule has exceptions, it doesn't belong here — put it in the agent definition instead.</div>
         <div class="close-hint">click again to close ↑</div>
       </div>
@@ -126,7 +172,15 @@ Return structured JSON in the final answer.</pre>
   </div>
 
   <div class="block block-2">
-    <div class="tip">💡 Like a job description — written once, re-used every time that specialist is needed.</div>
+    <div class="tip">
+      <strong>🤖 Agent definitions</strong> — specialist job descriptions
+      <ul>
+        <li>One file per specialist agent (data-fetcher, climate-analyst, figure-maker…)</li>
+        <li>Frontmatter: name, description, tools list, model, skills to load</li>
+        <li>Body: the agent's specific instructions — what to do and how</li>
+        <li>Loaded only when that specialist is called — not at startup</li>
+      </ul>
+    </div>
     <span class="explore-hint">click to explore ↓</span>
     <div class="num">🤖</div>
     <div class="block-body">
@@ -139,24 +193,60 @@ Return structured JSON in the final answer.</pre>
       </ul>
       <div class="when">⏰ loaded: only when that agent is delegated to</div>
       <div class="expand-panel">
-        <p>Example <code>.claude/agents/data-fetcher.md</code>:</p>
-        <pre>name: data-fetcher
+        <p>Think of it as a job description — written once, re-used every time that specialist is needed. The file has two parts separated by <code>---</code>:</p>
+        <pre>## .claude/agents/data-fetcher.md
+
+name: data-fetcher
 description: Downloads ERA5 reanalysis via the CDS API
+             for a caller-specified date range and domain
+model: claude-sonnet-5-5
 tools: [bash, write_file]
-skills: [era5-download]
+skills: [era5-download, netcdf-conventions]
 ---
-You download ERA5 pressure-level data for the
-date range the caller specifies.
-Always save to data/raw/era5/ as NetCDF4.</pre>
-        <p>The frontmatter (above <code>---</code>) is machine-readable. The body (below) is the LLM's instruction manual.</p>
-        <div class="ep-tip">💡 The description field is what Claude reads to decide <em>which</em> agent to delegate to — make it precise and distinctive.</div>
+You download ERA5 monthly 2m temperature (t2m) for the
+date range and domain the caller specifies.
+
+Always save to data/raw/era5/t2m_YYYY.nc.
+Never overwrite an existing file — check first with bash.
+Report the list of downloaded files in your final answer.</pre>
+        <div class="expand-grid">
+          <div class="eg-box">
+            <h5>Frontmatter fields</h5>
+            <ul>
+              <li><code>name</code>: short slug (used to delegate)</li>
+              <li><code>description</code>: how the router picks it</li>
+              <li><code>tools</code>: exact list, nothing extra</li>
+              <li><code>skills</code>: pre-loaded skill files</li>
+              <li><code>model</code>: override per specialist</li>
+            </ul>
+          </div>
+          <div class="eg-box">
+            <h5>Body best practices</h5>
+            <ul>
+              <li>Start with the agent's core job in one line</li>
+              <li>List what it reads and what it writes</li>
+              <li>Specify output format (JSON, file path)</li>
+              <li>Name the edge cases it must handle</li>
+            </ul>
+          </div>
+        </div>
+        <p>The frontmatter (above <code>---</code>) is machine-readable. The body (below) is the LLM's instruction manual. Claude reads both when delegating to this specialist.</p>
+        <div class="ep-tip">💡 The description field is what Claude reads to decide <em>which</em> agent to delegate to — make it precise and distinctive. Avoid generic descriptions like "handles data."</div>
         <div class="close-hint">click again to close ↑</div>
       </div>
     </div>
   </div>
 
   <div class="block block-3">
-    <div class="tip">💡 Skills keep agents small and composable — load only what you need, pay only those tokens.</div>
+    <div class="tip">
+      <strong>🔧 Skills</strong> — reusable instruction packages
+      <ul>
+        <li>A skill is a Markdown file (+ optional helper scripts) for one specific capability</li>
+        <li>Not loaded at startup — only when an agent explicitly invokes it</li>
+        <li>Shared across projects: write era5-download once, use it everywhere</li>
+        <li>Lazy loading saves tokens — agents that don't need it pay zero cost</li>
+      </ul>
+    </div>
     <span class="explore-hint">click to explore ↓</span>
     <div class="num">🔧</div>
     <div class="block-body">
@@ -169,21 +259,63 @@ Always save to data/raw/era5/ as NetCDF4.</pre>
       </ul>
       <div class="when">⏰ loaded: only when explicitly invoked</div>
       <div class="expand-panel">
-        <p>Add <code>skills: [era5-download]</code> to an agent's AGENTS.md entry. The SKILL.md file loads at that moment and might contain:</p>
-        <pre>- Full CDS API authentication steps
-- cdsapi Python code templates
-- Variable name mappings (t2m, u10, v10…)
-- Instructions for handling API rate limits
-- Helper scripts: download_era5.py</pre>
-        <p>The skill author maintains it once; every agent that lists it gets the latest version automatically.</p>
-        <div class="ep-tip">💡 Skills are reusable across projects. A well-written era5-download skill can serve a dozen different projects with no changes.</div>
+        <p>Add <code>skills: [era5-download]</code> to an agent's frontmatter. When that agent starts, the SKILL.md loads — it might contain 200+ lines of expert knowledge:</p>
+        <pre>## .claude/skills/era5-download/SKILL.md
+
+# ERA5 download skill
+
+## Authentication
+1. Create a free account at cds.climate.copernicus.eu
+2. Copy your UID and API key to ~/.cdsapirc:
+   url: https://cds.climate.copernicus.eu/api/v2
+   key: &lt;UID&gt;:&lt;API-KEY&gt;
+
+## Variable name mappings
+t2m   → '2m_temperature'
+u10   → '10m_u_component_of_wind'
+v10   → '10m_v_component_of_wind'
+tp    → 'total_precipitation'
+
+## Helper scripts included:
+  download_era5.py     — single-variable downloader
+  check_cds_queue.py   — monitor pending requests</pre>
+        <div class="expand-grid">
+          <div class="eg-box">
+            <h5>Skill anatomy</h5>
+            <ul>
+              <li>SKILL.md — instructions + examples</li>
+              <li>Helper .py scripts (optional)</li>
+              <li>Config templates (optional)</li>
+              <li>Test cases (optional)</li>
+            </ul>
+          </div>
+          <div class="eg-box">
+            <h5>When to make a skill</h5>
+            <ul>
+              <li>Specialised API (CDS, ERDDAP, NOAA)</li>
+              <li>Domain conventions (CF, NetCDF, GRIB)</li>
+              <li>Shared plotting style guide</li>
+              <li>Anything &gt;2 agents would need</li>
+            </ul>
+          </div>
+        </div>
+        <p>The skill author maintains it once; every agent that lists it gets the latest version automatically. Update the skill, and all agents immediately benefit.</p>
+        <div class="ep-tip">💡 Skills are reusable across projects. A well-written era5-download skill serves a dozen different projects with no changes — write it once, share it everywhere.</div>
         <div class="close-hint">click again to close ↑</div>
       </div>
     </div>
   </div>
 
   <div class="block block-4">
-    <div class="tip">💡 The safety net — even a rogue agent can't break these hard limits.</div>
+    <div class="tip">
+      <strong>🔒 Permissions</strong> — the safety net that never sleeps
+      <ul>
+        <li>Enforced by the harness before every tool call — agents cannot bypass this</li>
+        <li>allowedTools: only listed tools are callable, all others are blocked</li>
+        <li>blockedPaths: no agent can touch data/raw/ even if it tries</li>
+        <li>Even a buggy or misbehaving agent cannot break these hard limits</li>
+      </ul>
+    </div>
     <span class="explore-hint">click to explore ↓</span>
     <div class="num">🔒</div>
     <div class="block-body">
@@ -196,15 +328,50 @@ Always save to data/raw/era5/ as NetCDF4.</pre>
       </ul>
       <div class="when">⏰ applied: always, before every tool call</div>
       <div class="expand-panel">
-        <p>Example <code>.claude/settings.json</code>:</p>
-        <pre>{
-  "allowedTools": ["bash","read_file",
-                   "write_file","python"],
-  "blockedPaths": ["data/raw"],
-  "maxConcurrentAgents": 4
+        <p>The permissions file is the safety net — even a rogue agent can't break these hard limits. It is checked <strong>before</strong> the tool call runs, not after:</p>
+        <pre>## .claude/settings.json
+
+{
+  "allowedTools": [
+    "bash", "read_file", "write_file", "python"
+  ],
+  "blockedPaths": [
+    "data/raw",
+    "~/.ssh",
+    "~/.aws"
+  ],
+  "maxConcurrentAgents": 4,
+  "requireApprovalFor": [
+    "bash(rm .*)",
+    "bash(git push.*)"
+  ]
 }</pre>
+        <div class="expand-grid">
+          <div class="eg-box">
+            <h5>blockedPaths use cases</h5>
+            <ul>
+              <li><code>data/raw</code> — protect raw data</li>
+              <li><code>~/.ssh</code> — block credential access</li>
+              <li><code>production/</code> — block live systems</li>
+              <li><code>billing/</code> — protect financial data</li>
+            </ul>
+          </div>
+          <div class="eg-box">
+            <h5>requireApprovalFor</h5>
+            <ul>
+              <li>Destructive bash commands</li>
+              <li>Git push to protected branches</li>
+              <li>API calls that cost money</li>
+              <li>Database DELETE or DROP</li>
+            </ul>
+          </div>
+        </div>
         <p>The <code>blockedPaths</code> setting prevents any agent from modifying raw data, even if it tries. This is enforced by the harness <strong>before</strong> the tool call runs — the agent never even gets to attempt it.</p>
-        <div class="ep-tip">💡 Always block your raw data directory. It's the best insurance against an agent accidentally overwriting a 50 GB download.</div>
+        <div class="ep-tip">💡 Always block your raw data directory. It's the best insurance against an agent accidentally overwriting a 50 GB download that took hours to fetch.</div>
+        <div class="ep-fail">
+          <strong>⚠️ What if permissions are too strict?</strong>
+          Agents will report "tool not allowed" and stop. Start with a wide allowlist, then tighten it once the pipeline works. Never add write_file to a read-only reviewer — that's what blockedPaths is for.
+        </div>
         <div class="close-hint">click again to close ↑</div>
       </div>
     </div>
@@ -215,7 +382,7 @@ Always save to data/raw/era5/ as NetCDF4.</pre>
 <div class="dyk">
   🌟 <strong>Did you know?</strong> The same four-block structure works in Claude Code, Codex, Gemini CLI, and others — learn it once and you understand them all!
 </div>
-<p class="caption">Click each block to see a real example · Same ideas in every AI coding tool — only filenames differ</p>
+<p class="caption">Hover to preview · Click each block to see a real example · Same ideas in every AI coding tool — only filenames differ</p>
 
 <script>(function(){
   var root = document.currentScript ? document.currentScript.parentElement : document.querySelector('.dg-building-blocks');

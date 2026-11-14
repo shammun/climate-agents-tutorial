@@ -15,12 +15,13 @@
   position:relative; cursor:pointer; transition:transform .18s;
 }
 .dg-agents-hub .pill:hover { transform:scale(1.04); }
-.dg-agents-hub .pill.open { box-shadow:0 6px 24px rgba(0,0,0,0.12) !important; transform:none; }
+.dg-agents-hub .pill.open { box-shadow:0 6px 24px rgba(0,0,0,0.12) !important; transform:none; z-index:20; }
 .dg-agents-hub .pill .tip {
   display:none; position:absolute; left:50%; transform:translateX(-50%);
   bottom:calc(100% + 10px); background:#FFFDE7; border:1.5px solid #F9A825;
-  border-radius:10px; padding:8px 14px; font-size:0.75rem; color:#5D4037;
-  white-space:nowrap; z-index:10; box-shadow:0 4px 12px #0002; pointer-events:none; font-weight:400;
+  border-radius:12px; padding:10px 16px; font-size:0.74rem; color:#5D4037;
+  min-width:220px; max-width:320px; white-space:normal; z-index:50;
+  box-shadow:0 4px 12px #0003; pointer-events:none; font-weight:400; line-height:1.5;
 }
 .dg-agents-hub .pill:not(.open):hover .tip { display:block; }
 /* explore hint */
@@ -59,15 +60,16 @@
   transition:transform .18s; margin:0 auto; max-width:400px;
 }
 .dg-agents-hub .main-card:not(.open):hover { transform:translateY(-3px); }
-.dg-agents-hub .main-card.open { box-shadow:0 6px 24px rgba(0,0,0,0.12) !important; max-width:100%; }
+.dg-agents-hub .main-card.open { box-shadow:0 6px 24px rgba(0,0,0,0.12) !important; max-width:100%; z-index:20; }
 .dg-agents-hub .main-card .card-title { font-weight:800; font-size:1.1rem; color:#0D47A1; margin:0 0 6px; }
 .dg-agents-hub .main-card .card-bullets { margin:0; padding:0; list-style:none; font-size:.78rem; color:#1565C0; }
 .dg-agents-hub .main-card .card-bullets li::before { content:"• "; }
 .dg-agents-hub .main-card .tip {
   display:none; position:absolute; left:50%; transform:translateX(-50%);
   bottom:calc(100% + 10px); background:#EBF5FB; border:1.5px solid #1E88E5;
-  border-radius:10px; padding:8px 14px; font-size:0.75rem; color:#0D47A1;
-  white-space:nowrap; z-index:10; box-shadow:0 4px 12px #0002; pointer-events:none;
+  border-radius:12px; padding:10px 16px; font-size:0.74rem; color:#0D47A1;
+  min-width:220px; max-width:320px; white-space:normal; z-index:50;
+  box-shadow:0 4px 12px #0003; pointer-events:none; line-height:1.5;
 }
 .dg-agents-hub .main-card:not(.open):hover .tip { display:block; }
 /* delegate label */
@@ -80,7 +82,7 @@
   position:relative; cursor:pointer; transition:transform .18s, box-shadow .18s;
 }
 .dg-agents-hub .sub-card:not(.open):hover { transform:translateY(-3px) scale(1.02); }
-.dg-agents-hub .sub-card.open { box-shadow:0 6px 24px rgba(0,0,0,0.12) !important; }
+.dg-agents-hub .sub-card.open { box-shadow:0 6px 24px rgba(0,0,0,0.12) !important; z-index:20; }
 .dg-agents-hub .sub-fetcher  { background:#E8F5E9; border-color:#43A047; box-shadow:4px 4px 0 #A5D6A7; }
 .dg-agents-hub .sub-qc       { background:#F3E5F5; border-color:#8E24AA; box-shadow:4px 4px 0 #CE93D8; }
 .dg-agents-hub .sub-analyst  { background:#FFF8E1; border-color:#F9A825; box-shadow:4px 4px 0 #FFD54F; }
@@ -100,9 +102,10 @@
 .dg-agents-hub .sub-qc .ro-badge       { background:#F3E5F5; color:#E91E63; border:1px solid #E91E63; }
 .dg-agents-hub .sub-reviewer .ro-badge { background:#FBE9E7; color:#E91E63; border:1px solid #E91E63; }
 .dg-agents-hub .sub-card .tip {
-  display:none; position:absolute; left:50%; transform:translateX(-50%);
-  top:calc(100% + 8px); border-radius:10px; padding:8px 12px; font-size:0.72rem;
-  white-space:nowrap; z-index:10; box-shadow:0 4px 12px #0002; pointer-events:none;
+  display:none; position:absolute; left:0; right:0;
+  top:calc(100% + 8px); border-radius:12px; padding:10px 14px; font-size:0.73rem;
+  white-space:normal; z-index:50; box-shadow:0 4px 16px #0003; pointer-events:none;
+  line-height:1.5;
 }
 .dg-agents-hub .sub-fetcher  .tip { background:#F1F8E9; border:1.5px solid #43A047; color:#1B5E20; }
 .dg-agents-hub .sub-qc       .tip { background:#F3E5F5; border:1.5px solid #8E24AA; color:#4A148C; }
@@ -130,7 +133,7 @@
 <!-- YOU pill -->
 <div class="you-pill">
   <div class="pill" id="ah-you-pill">
-    <div class="tip">You give the goal in natural language — the main agent handles the rest</div>
+    <div class="tip">You describe your goal in plain language — no code, no file paths required.<br>The main agent decomposes it into sub-tasks and delegates each to the right specialist.<br><em>Be specific about expected outputs for best results.</em></div>
     <span class="explore-hint">click ↓</span>
     👤 You
     <div class="expand-panel">
@@ -145,7 +148,7 @@
 
 <!-- MAIN AGENT -->
 <div class="main-card" id="ah-main-card">
-  <div class="tip">The orchestrator — thinks big picture, decomposes tasks, delegates details</div>
+  <div class="tip"><strong>🤖 Main agent</strong> — the orchestrator<br>Talks to you, writes a step-by-step plan, then delegates each step to the right specialist.<br>Collects results, handles failures (re-runs the failing step), and delivers the final answer.<br><em>It never does the domain work itself — it only coordinates.</em></div>
   <span class="explore-hint">click to explore ↓</span>
   <div class="card-title">🤖 Main agent</div>
   <ul class="card-bullets">
@@ -177,7 +180,7 @@ Step 5: results-reviewer checks outputs</pre>
 <div class="sub-grid">
 
   <div class="sub-card sub-fetcher">
-    <div class="tip">Fetches raw NetCDF from the ERA5 API and stores to disk</div>
+    <div class="tip"><strong>📡 data-fetcher</strong><br>Calls CDS API year-by-year; saves raw NetCDF4 to data/raw/era5/.<br>Skips years already downloaded — safe to re-run.<br><em>Write access to data/raw/ only; no analysis or plotting.</em></div>
     <span class="explore-hint">click ↓</span>
     <div class="sub-title">📡 data-fetcher</div>
     <ul class="sub-bullets">
@@ -224,7 +227,7 @@ Step 5: results-reviewer checks outputs</pre>
       <li>saves processed NetCDF</li>
     </ul>
     <div class="tools-tag">python · read_file · write_file</div>
-    <div class="tip">Runs statistical analysis — trend lines, anomalies, EOF patterns</div>
+    <div class="tip"><strong>📊 climate-analyst</strong><br>Loads raw ERA5 → extracts JJA months → computes per-year seasonal means → fits linear trend per grid cell with scipy.stats.linregress → saves slope + p-value as CF-compliant NetCDF.<br><em>Never downloads or plots — pure data transformation.</em></div>
     <div class="expand-panel">
       <p><strong>Tools:</strong> python, read_file, write_file. Reads: <code>data/raw/era5/*.nc</code>. Writes: <code>data/processed/*.nc</code></p>
       <p>Example computation: load all years → extract JJA (June–August) → compute seasonal mean per grid cell → fit linear trend with <code>scipy.stats.linregress</code> → save slope and p-value as NetCDF with CF attributes.</p>

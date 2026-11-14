@@ -34,6 +34,7 @@
 .dg-load-timeline .step-3 .card { background:#F3E5F5; border-color:#8E24AA; box-shadow:4px 4px 0 #CE93D8; }
 .dg-load-timeline .step-4 .card { background:#FFF3E0; border-color:#F4511E; box-shadow:4px 4px 0 #FFAB91; }
 .dg-load-timeline .card.open { box-shadow:0 6px 24px rgba(0,0,0,0.12) !important; }
+.dg-load-timeline .step.step-open { z-index:20; }
 .dg-load-timeline .card-title { font-weight:800; font-size:0.95rem; margin:0 0 6px; }
 .dg-load-timeline .step-1 .card-title { color:#E65100; }
 .dg-load-timeline .step-2 .card-title { color:#0D47A1; }
@@ -47,10 +48,11 @@
 .dg-load-timeline .card-bullets li::before { content:"• "; }
 /* hover tooltip */
 .dg-load-timeline .tip {
-  display:none; position:absolute; left:50%; transform:translateX(-50%);
+  display:none; position:absolute; left:0; right:0;
   bottom:calc(100% + 10px); background:#FFFDE7; border:1.5px solid #F9A825;
-  border-radius:10px; padding:8px 14px; font-size:0.75rem; color:#5D4037;
-  white-space:nowrap; z-index:10; box-shadow:0 4px 12px #0002; pointer-events:none; text-align:center;
+  border-radius:12px; padding:10px 16px; font-size:0.74rem; color:#5D4037;
+  white-space:normal; z-index:50; box-shadow:0 4px 16px #0003; pointer-events:none;
+  line-height:1.5; text-align:left;
 }
 .dg-load-timeline .step-2 .tip { border-color:#1E88E5; background:#EBF5FB; color:#0D47A1; }
 .dg-load-timeline .step-3 .tip { border-color:#8E24AA; background:#F3E5F5; color:#4A148C; }
@@ -102,7 +104,7 @@
   <div class="step step-1">
     <div class="step-dot">🟡</div>
     <div class="card">
-      <div class="tip">Lightweight — only summaries, not full skill text</div>
+      <div class="tip"><strong>1. Session starts</strong><br>CLAUDE.md / AGENTS.md loaded in full. For every defined agent, only <em>name + description</em> load — not the full body. Skill files are not read at all — only their one-line descriptions.<br><em>Startup stays fast: even a project with 20 agents and 15 skills loads in milliseconds.</em></div>
       <span class="explore-hint">click to explore ↓</span>
       <div class="card-title">1. Session starts</div>
       <ul class="card-bullets">
@@ -123,7 +125,7 @@
   <div class="step step-2">
     <div class="step-dot">🔵</div>
     <div class="card">
-      <div class="tip">Each agent has its own isolated context — no memory of siblings</div>
+      <div class="tip"><strong>2. Task delegated</strong><br>The subagent gets a <em>fresh, empty context</em> — no memory of the parent or sibling agents. It receives: (1) its own full AGENTS.md entry, (2) global CLAUDE.md rules, (3) any skills declared in <code>skills:</code>.<br>Tools are limited to exactly what <code>tools:</code> lists — bash is blocked if not listed.</div>
       <span class="explore-hint">click to explore ↓</span>
       <div class="card-title">2. Task delegated to an agent</div>
       <ul class="card-bullets">
@@ -147,7 +149,7 @@
   <div class="step step-3">
     <div class="step-dot">🟣</div>
     <div class="card">
-      <div class="tip">Skills are lazy-loaded — only pay the token cost when used</div>
+      <div class="tip"><strong>3. Skill invoked</strong><br>The full SKILL.md text loads at this moment — could be 200+ lines of expert knowledge, helper scripts, and templates. Agents that never need a skill pay zero tokens for it.<br><em>Update a skill once and all agents that list it get the new version automatically.</em></div>
       <span class="explore-hint">click to explore ↓</span>
       <div class="card-title">3. A skill is invoked</div>
       <ul class="card-bullets">
@@ -168,7 +170,7 @@
   <div class="step step-4">
     <div class="step-dot">🟠</div>
     <div class="card">
-      <div class="tip">This isolation is what makes agents composable and reusable</div>
+      <div class="tip"><strong>4. Agent finishes</strong><br>Only the final assistant message returns to the parent — every intermediate tool call, file read, and thought is discarded. This is why subagents should return <em>structured JSON</em>: it's all the parent will ever see.<br><em>Think of a subagent like a function call: inputs in, one clean result out.</em></div>
       <span class="explore-hint">click to explore ↓</span>
       <div class="card-title">4. Agent finishes</div>
       <ul class="card-bullets">
@@ -201,8 +203,14 @@
     card.addEventListener('click', function(e){
       e.stopPropagation();
       var wasOpen = card.classList.contains('open');
-      root.querySelectorAll('.card.open').forEach(function(c){ c.classList.remove('open'); });
-      if(!wasOpen) card.classList.add('open');
+      root.querySelectorAll('.card.open').forEach(function(c){
+        c.classList.remove('open');
+        var s = c.closest('.step'); if(s) s.classList.remove('step-open');
+      });
+      if(!wasOpen){
+        card.classList.add('open');
+        var step = card.closest('.step'); if(step) step.classList.add('step-open');
+      }
     });
   });
 })();</script>

@@ -24,7 +24,7 @@
 .dg-agent-loop .card-model { background:#E3F2FD; border-color:#1E88E5; box-shadow:4px 4px 0 #90CAF9; }
 .dg-agent-loop .card-tool  { background:#E8F5E9; border-color:#43A047; box-shadow:4px 4px 0 #A5D6A7; align-self:flex-end; max-width:280px; }
 .dg-agent-loop .card-final { background:#FFF3E0; border-color:#F4511E; box-shadow:4px 4px 0 #FFAB91; align-self:flex-start; max-width:280px; }
-.dg-agent-loop .card.open  { box-shadow:0 6px 24px rgba(0,0,0,0.13) !important; transform:none !important; max-width:100% !important; align-self:stretch !important; }
+.dg-agent-loop .card.open  { box-shadow:0 6px 24px rgba(0,0,0,0.13) !important; transform:none !important; max-width:100% !important; align-self:stretch !important; z-index:20; }
 .dg-agent-loop .card-title { font-weight:800; font-size:1rem; margin:0 0 6px; }
 .dg-agent-loop .card-task  .card-title { color:#E65100; }
 .dg-agent-loop .card-model .card-title { color:#0D47A1; }
@@ -40,8 +40,9 @@
 .dg-agent-loop .tip {
   display:none; position:absolute; left:50%; transform:translateX(-50%);
   bottom:calc(100% + 10px); background:#FFFDE7; border:1.5px solid #F9A825;
-  border-radius:10px; padding:8px 12px; font-size:0.75rem; color:#5D4037;
-  white-space:nowrap; z-index:10; box-shadow:0 4px 12px #0002; pointer-events:none;
+  border-radius:12px; padding:10px 16px; font-size:0.74rem; color:#5D4037;
+  min-width:200px; max-width:320px; white-space:normal; z-index:50;
+  box-shadow:0 4px 16px #0003; pointer-events:none; line-height:1.5;
 }
 .dg-agent-loop .card-model .tip { border-color:#1E88E5; background:#EBF5FB; color:#0D47A1; }
 .dg-agent-loop .card-tool  .tip { border-color:#43A047; background:#F1F8E9; color:#1B5E20; }
@@ -119,11 +120,17 @@
     </ul>
     <div class="expand-panel">
       <p>A task can be as simple as <em>"Analyze SST anomalies for 2023"</em> or as complex as a multi-page brief. The agent reads it verbatim on every loop iteration — so the more specific you are, the better.</p>
-      <p><strong>Good task example:</strong></p>
-      <pre>"Download ERA5 2m temperature for 2000–2023,
-compute JJA seasonal mean, plot a trend map,
-and save to figures/ as a PNG."</pre>
-      <div class="ep-tip">💡 Include file paths, variable names, and expected outputs directly in the task. The agent won't guess.</div>
+      <p><strong>✅ Good task (specific):</strong></p>
+      <pre>"Download ERA5 2m temperature for 2000–2023 over
+Europe (10W–40E, 35N–70N) at 0.25° resolution.
+Compute JJA seasonal mean per year per grid cell.
+Fit a linear trend. Plot a filled-contour trend map
+with CartoPy, stipple p &lt; 0.05 cells, and save to
+figures/YYYY-MM-DD_trend_map.png at 300 DPI."</pre>
+      <p><strong>❌ Bad task (vague):</strong></p>
+      <pre>"Analyze European temperature data and make a figure."</pre>
+      <p>The vague task forces the agent to guess domain, variable, season, stat, and output format — leading to wrong assumptions, re-runs, and wasted tokens.</p>
+      <div class="ep-tip">💡 Include file paths, variable names, expected outputs, and format details directly in the task. The agent won't guess — and neither should you.</div>
       <div class="close-hint">click again to close ↑</div>
     </div>
   </div>
@@ -142,10 +149,19 @@ and save to figures/ as a PNG."</pre>
       <li style="font-style:italic;opacity:.75">⚠ The model never executes — it instructs</li>
     </ul>
     <div class="expand-panel">
-      <p>The model never touches files directly. It outputs a structured tool call like:</p>
-      <pre>{"tool": "bash", "input": "python trend.py"}</pre>
-      <p>…and the harness executes it. This separation lets the LLM focus on reasoning while the harness handles execution safety. Claude reads the <strong>entire message history</strong> on every loop — so long chains can get expensive in tokens.</p>
-      <div class="ep-tip">💡 Keep tasks focused. A chain of 20 tool calls means the model re-reads everything 20 times.</div>
+      <p>The model never touches files directly. It outputs a structured tool call:</p>
+      <pre>{"tool": "bash", "input": "python compute_trend.py"}</pre>
+      <p>…and the harness executes it, returning the result to the model. The model then decides the next tool call — or writes a final answer to end the loop.</p>
+      <p><strong>What the model sees on each iteration:</strong></p>
+      <pre>System: [CLAUDE.md + agent instructions]
+User:   [original task]
+Asst:   [tool call 1]
+User:   [tool result 1]
+Asst:   [tool call 2]
+User:   [tool result 2]
+...     [entire history, every time]</pre>
+      <p>This means a chain of 20 tool calls = the model re-reads the full history 20 times. Keep loops tight — focused subagents with limited tool lists finish faster and cost less.</p>
+      <div class="ep-tip">💡 Keep tasks focused. A chain of 20 tool calls means the model re-reads everything 20 times. Split long workflows across subagents — each gets a fresh, small context.</div>
       <div class="close-hint">click again to close ↑</div>
     </div>
   </div>
@@ -173,13 +189,19 @@ and save to figures/ as a PNG."</pre>
           <li>download climate data</li>
         </ul>
         <div class="expand-panel">
-          <p>Common climate science tools:</p>
-          <pre>bash        → run Python / NCO / CDO scripts
-read_file   → inspect NetCDF headers
-write_file  → save processed data
-python      → run inline snippets
-search_web  → look up variable conventions</pre>
-          <p>The tool list is declared in AGENTS.md under <code>tools:</code> — the agent can <strong>only</strong> call tools listed there.</p>
+          <p>Common climate science tools and what they do:</p>
+          <pre>bash        → run Python / NCO / CDO scripts, check files
+read_file   → inspect NetCDF headers and metadata
+write_file  → save processed data and results
+python      → run inline analysis snippets
+search_web  → look up CF standard names, API docs</pre>
+          <p>The tool list is declared in AGENTS.md under <code>tools:</code> — the agent can <strong>only</strong> call tools listed there. Any unlisted tool is blocked by the harness before the call runs.</p>
+          <p><strong>Tool call cycle:</strong></p>
+          <pre>Model: {"tool":"bash","input":"ncdump -h era5.nc"}
+                    ↓ harness runs it
+Result: "dimensions: time=24, lat=140, lon=200..."
+                    ↓ appended to history
+Model: decides next step based on that output</pre>
           <div class="close-hint">click again to close ↑</div>
         </div>
       </div>
@@ -199,9 +221,19 @@ search_web  → look up variable conventions</pre>
         <li>working steps stay private</li>
       </ul>
       <div class="expand-panel">
-        <p>The agent stops when it outputs plain text with <em>no tool call</em>. Everything it wrote, every bash command it ran, every intermediate file — none of that is visible to the caller.</p>
-        <p>The caller only sees this final message. That isolation is what makes agents <strong>composable</strong>: one agent's messy work becomes another agent's clean input.</p>
-        <div class="ep-tip">💡 Ask your agent to return structured output (JSON) in the final answer — it makes chaining agents much easier.</div>
+        <p>The agent stops when it outputs plain text with <em>no tool call</em>. Everything it ran — every bash command, every intermediate file, every failed attempt — stays hidden inside the agent. The caller only ever sees this final message.</p>
+        <p><strong>❌ Unstructured final answer (hard to chain):</strong></p>
+        <pre>"I downloaded the ERA5 data and computed the trend.
+The trend map is saved. It looks reasonable."</pre>
+        <p><strong>✅ Structured final answer (easy to chain):</strong></p>
+        <pre>{"status": "PASS",
+ "files_written": ["data/processed/trend.nc",
+                   "figures/2024-01-15_trend_map.png"],
+ "trend_range_K_yr": [-0.08, 0.14],
+ "significant_fraction": 0.34,
+ "warnings": []}</pre>
+        <p>That isolation is what makes agents <strong>composable</strong>: one agent's messy 20-step work becomes another agent's clean JSON input.</p>
+        <div class="ep-tip">💡 Always ask your agent to return structured JSON in the final answer — it makes chaining agents, error-checking, and automation dramatically easier.</div>
         <div class="close-hint">click again to close ↑</div>
       </div>
     </div>
