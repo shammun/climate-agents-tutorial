@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   render:
@@ -35,3 +36,6 @@ jobs:
           git add -f dist/videos/explainer.mp4 dist/videos/building-agents.mp4
           git diff --cached --quiet || git commit -m "Render explainer and building-agents videos"
           git push
+          gh workflow run pages.yml --repo shammun/climate-agents-tutorial
+        env:
+          GH_TOKEN: ${{ github.token }}
