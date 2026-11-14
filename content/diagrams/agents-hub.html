@@ -1,0 +1,304 @@
+<div class="dg dg-agents-hub">
+<style>
+.dg-agents-hub {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #FFFBF0;
+  border-radius: 24px;
+  padding: 28px 20px 20px;
+  max-width: 620px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.dg-agents-hub .dg-title {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #37474F;
+  margin: 0 0 4px;
+}
+.dg-agents-hub .dg-subtitle {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #78909C;
+  margin: 0 0 20px;
+}
+/* you pill */
+.dg-agents-hub .you-pill {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0;
+}
+.dg-agents-hub .pill {
+  background: #FFF8E1;
+  border: 3px solid #F9A825;
+  border-radius: 40px;
+  padding: 8px 28px;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #E65100;
+  box-shadow: 4px 4px 0 #FFD54F;
+  position: relative;
+  cursor: pointer;
+}
+.dg-agents-hub .pill .tip {
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 10px);
+  background: #FFFDE7;
+  border: 1.5px solid #F9A825;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.75rem;
+  color: #5D4037;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 4px 12px #0002;
+  pointer-events: none;
+  font-weight: 400;
+}
+.dg-agents-hub .pill:hover .tip { display: block; }
+/* connector lines */
+@keyframes flow-down { 0%{stroke-dashoffset:0} 100%{stroke-dashoffset:-24} }
+.dg-agents-hub .arrow-down {
+  display: flex;
+  justify-content: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  margin: 4px 0;
+}
+@keyframes bounce-down { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)} }
+.dg-agents-hub .arrow-down span { animation: bounce-down 0.9s ease-in-out infinite; display:block; }
+/* main agent */
+.dg-agents-hub .main-card {
+  background: #E3F2FD;
+  border: 3px solid #1E88E5;
+  border-radius: 20px;
+  padding: 14px 20px;
+  box-shadow: 5px 5px 0 #90CAF9;
+  position: relative;
+  cursor: pointer;
+  transition: transform .18s;
+  margin: 0 auto;
+  max-width: 400px;
+}
+.dg-agents-hub .main-card:hover { transform: translateY(-3px); }
+.dg-agents-hub .main-card .card-title { font-weight:800; font-size:1.1rem; color:#0D47A1; margin:0 0 6px; }
+.dg-agents-hub .main-card .card-bullets { margin:0; padding:0; list-style:none; font-size:.78rem; color:#1565C0; }
+.dg-agents-hub .main-card .card-bullets li::before { content:"• "; }
+.dg-agents-hub .main-card .tip {
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 10px);
+  background: #EBF5FB;
+  border: 1.5px solid #1E88E5;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.75rem;
+  color: #0D47A1;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 4px 12px #0002;
+  pointer-events: none;
+}
+.dg-agents-hub .main-card:hover .tip { display: block; }
+/* delegate label row */
+.dg-agents-hub .delegate-row {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin: 4px 0 0;
+  font-size: .72rem;
+  color: #90A4AE;
+}
+/* subagent grid */
+.dg-agents-hub .sub-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+.dg-agents-hub .sub-card {
+  border-radius: 18px;
+  padding: 12px 14px;
+  border-width: 3px;
+  border-style: solid;
+  position: relative;
+  cursor: pointer;
+  transition: transform .18s, box-shadow .18s;
+}
+.dg-agents-hub .sub-card:hover { transform: translateY(-3px) scale(1.02); }
+.dg-agents-hub .sub-fetcher  { background:#E8F5E9; border-color:#43A047; box-shadow:4px 4px 0 #A5D6A7; }
+.dg-agents-hub .sub-qc       { background:#F3E5F5; border-color:#8E24AA; box-shadow:4px 4px 0 #CE93D8; }
+.dg-agents-hub .sub-analyst  { background:#FFF8E1; border-color:#F9A825; box-shadow:4px 4px 0 #FFD54F; }
+.dg-agents-hub .sub-reviewer { background:#FFF3E0; border-color:#F4511E; box-shadow:4px 4px 0 #FFAB91; }
+.dg-agents-hub .sub-title { font-weight:800; font-size:.88rem; margin:0 0 4px; }
+.dg-agents-hub .sub-fetcher  .sub-title { color:#1B5E20; }
+.dg-agents-hub .sub-qc       .sub-title { color:#6A1B9A; }
+.dg-agents-hub .sub-analyst  .sub-title { color:#E65100; }
+.dg-agents-hub .sub-reviewer .sub-title { color:#BF360C; }
+.dg-agents-hub .sub-bullets { margin:0; padding:0; list-style:none; font-size:.73rem; }
+.dg-agents-hub .sub-fetcher  .sub-bullets { color:#2E7D32; }
+.dg-agents-hub .sub-qc       .sub-bullets { color:#4A148C; }
+.dg-agents-hub .sub-analyst  .sub-bullets { color:#6D4C41; }
+.dg-agents-hub .sub-reviewer .sub-bullets { color:#E64A19; }
+.dg-agents-hub .sub-bullets li::before { content:"• "; }
+.dg-agents-hub .ro-badge {
+  font-size: .62rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 8px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+.dg-agents-hub .sub-qc .ro-badge       { background:#F3E5F5; color:#E91E63; border:1px solid #E91E63; }
+.dg-agents-hub .sub-reviewer .ro-badge { background:#FBE9E7; color:#E91E63; border:1px solid #E91E63; }
+/* sub tooltips */
+.dg-agents-hub .sub-card .tip {
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(100% + 8px);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 4px 12px #0002;
+  pointer-events: none;
+}
+.dg-agents-hub .sub-fetcher  .tip { background:#F1F8E9; border:1.5px solid #43A047; color:#1B5E20; }
+.dg-agents-hub .sub-qc       .tip { background:#F3E5F5; border:1.5px solid #8E24AA; color:#4A148C; }
+.dg-agents-hub .sub-analyst  .tip { background:#FFFDE7; border:1.5px solid #F9A825; color:#E65100; }
+.dg-agents-hub .sub-reviewer .tip { background:#FBE9E7; border:1.5px solid #F4511E; color:#BF360C; }
+.dg-agents-hub .sub-card:hover .tip { display: block; }
+/* dyk */
+.dg-agents-hub .dyk {
+  background: #FCE4EC;
+  border: 2px dashed #E91E63;
+  border-radius: 14px;
+  padding: 10px 16px;
+  font-size: .78rem;
+  color: #880E4F;
+  text-align: center;
+  margin-top: 14px;
+}
+.dg-agents-hub .dyk strong { color:#AD1457; }
+.dg-agents-hub .caption {
+  text-align: center;
+  font-size: .74rem;
+  color: #90A4AE;
+  font-style: italic;
+  margin-top: 14px;
+}
+/* tools tag */
+.dg-agents-hub .tools-tag {
+  font-size:.65rem;
+  background:#0001;
+  border-radius:6px;
+  padding:1px 5px;
+  margin-top:4px;
+  display:inline-block;
+  font-family:'Cascadia Code','Consolas',monospace;
+}
+.dg-agents-hub .sub-fetcher  .tools-tag { color:#1B5E20; background:#C8E6C9; }
+.dg-agents-hub .sub-qc       .tools-tag { color:#4A148C; background:#E1BEE7; }
+.dg-agents-hub .sub-analyst  .tools-tag { color:#E65100; background:#FFE082; }
+.dg-agents-hub .sub-reviewer .tools-tag { color:#BF360C; background:#FFCCBC; }
+</style>
+
+<p class="dg-title">🕸️ Main Agent + Subagents</p>
+<p class="dg-subtitle">One orchestrator — many specialists. Each gets its own context and tools.</p>
+
+<!-- YOU pill -->
+<div class="you-pill">
+  <div class="pill">
+    <div class="tip">You give the goal in natural language — the main agent handles the rest</div>
+    👤 You
+  </div>
+</div>
+
+<!-- down arrow -->
+<div class="arrow-down"><span style="color:#F9A825;">↓</span></div>
+
+<!-- MAIN AGENT -->
+<div class="main-card">
+  <div class="tip">The orchestrator — thinks big picture, decomposes tasks, delegates details</div>
+  <div class="card-title">🤖 Main agent</div>
+  <ul class="card-bullets">
+    <li>talks to you, plans, delegates</li>
+    <li>decomposes the task into focused sub-jobs</li>
+    <li>collects results and synthesises the final answer</li>
+    <li style="font-style:italic;opacity:.75">🎯 Sees the big picture — never does the detail work</li>
+  </ul>
+</div>
+
+<!-- delegate label -->
+<div class="delegate-row">
+  ← task + file paths dispatched to each subagent →
+</div>
+
+<!-- down arrows for subagents (decorative) -->
+<div style="display:flex;justify-content:center;gap:60px;font-size:1.3rem;color:#90A4AE;margin:2px 0;">
+  <span>↙</span><span>↓</span><span>↓</span><span>↘</span>
+</div>
+
+<!-- SUBAGENT GRID -->
+<div class="sub-grid">
+
+  <div class="sub-card sub-fetcher">
+    <div class="tip">Fetches raw NetCDF from the ERA5 API and stores to disk</div>
+    <div class="sub-title">📡 data-fetcher</div>
+    <ul class="sub-bullets">
+      <li>downloads ERA5 reanalysis</li>
+      <li>own context · own tools</li>
+      <li>handles retries and chunking</li>
+    </ul>
+    <div class="tools-tag">bash · download · write_file</div>
+  </div>
+
+  <div class="sub-card sub-qc">
+    <span class="ro-badge">🔍 read-only</span>
+    <div class="sub-title">🔎 data-qc</div>
+    <ul class="sub-bullets">
+      <li>checks data quality</li>
+      <li>own context · own tools</li>
+      <li>validates units, fill values, coverage</li>
+    </ul>
+    <div class="tools-tag">read_file · python</div>
+  </div>
+
+  <div class="sub-card sub-analyst">
+    <div class="sub-title">📊 climate-analyst</div>
+    <ul class="sub-bullets">
+      <li>computes trends &amp; anomalies</li>
+      <li>own context · own tools</li>
+      <li>saves figures and stats</li>
+    </ul>
+    <div class="tools-tag">python · read_file · write_file</div>
+    <div class="tip">Runs statistical analysis — trend lines, anomalies, EOF patterns</div>
+  </div>
+
+  <div class="sub-card sub-reviewer">
+    <span class="ro-badge">📝 read-only</span>
+    <div class="sub-title">📝 results-reviewer</div>
+    <ul class="sub-bullets">
+      <li>reviews outputs · read-only</li>
+      <li>own context · own tools</li>
+      <li>writes the final summary</li>
+    </ul>
+    <div class="tools-tag">read_file · bash</div>
+    <div class="tip">Sanity-checks figures and writes the final human-readable summary</div>
+  </div>
+
+</div>
+
+<div class="dyk">
+  🌟 <strong>Did you know?</strong> Subagents run sequentially by default, but can be spawned in parallel — cutting a 4-step pipeline from 4× to 1× the wall-clock time!
+</div>
+<p class="caption">Hover each card to learn more · Each subagent starts with an empty context and returns only a short summary</p>
+</div>

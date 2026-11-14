@@ -1,0 +1,221 @@
+<div class="dg dg-building-blocks">
+<style>
+.dg-building-blocks {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #FFFBF0;
+  border-radius: 24px;
+  padding: 28px 20px 20px;
+  max-width: 620px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.dg-building-blocks .dg-title {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #37474F;
+  margin: 0 0 4px;
+}
+.dg-building-blocks .dg-subtitle {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #78909C;
+  margin: 0 0 20px;
+}
+/* grid of 4 cards stacked */
+.dg-building-blocks .blocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+/* each block row */
+.dg-building-blocks .block {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border-radius: 20px;
+  padding: 14px 18px;
+  border-width: 3px;
+  border-style: solid;
+  cursor: pointer;
+  position: relative;
+  transition: transform .18s, box-shadow .18s;
+}
+.dg-building-blocks .block:hover { transform: translateX(5px); }
+.dg-building-blocks .block-1 { background:#FFF8E1; border-color:#F9A825; box-shadow: 5px 5px 0 #FFD54F; }
+.dg-building-blocks .block-2 { background:#E3F2FD; border-color:#1E88E5; box-shadow: 5px 5px 0 #90CAF9; }
+.dg-building-blocks .block-3 { background:#F3E5F5; border-color:#8E24AA; box-shadow: 5px 5px 0 #CE93D8; }
+.dg-building-blocks .block-4 { background:#FFF3E0; border-color:#F4511E; box-shadow: 5px 5px 0 #FFAB91; }
+/* number badge */
+.dg-building-blocks .num {
+  min-width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 900;
+  flex-shrink: 0;
+  border-width: 3px;
+  border-style: solid;
+}
+.dg-building-blocks .block-1 .num { background:#FFF8E1; border-color:#F9A825; color:#E65100; }
+.dg-building-blocks .block-2 .num { background:#E3F2FD; border-color:#1E88E5; color:#0D47A1; }
+.dg-building-blocks .block-3 .num { background:#F3E5F5; border-color:#8E24AA; color:#6A1B9A; }
+.dg-building-blocks .block-4 .num { background:#FFF3E0; border-color:#F4511E; color:#BF360C; }
+/* text side */
+.dg-building-blocks .block-body { flex: 1; }
+.dg-building-blocks .block-title {
+  font-weight: 800;
+  font-size: 1rem;
+  margin: 0 0 4px;
+}
+.dg-building-blocks .block-1 .block-title { color:#E65100; }
+.dg-building-blocks .block-2 .block-title { color:#0D47A1; }
+.dg-building-blocks .block-3 .block-title { color:#6A1B9A; }
+.dg-building-blocks .block-4 .block-title { color:#BF360C; }
+.dg-building-blocks .block-files {
+  font-size: 0.74rem;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+.dg-building-blocks .block-1 .block-files { background:#FFF3E0; color:#BF360C; }
+.dg-building-blocks .block-2 .block-files { background:#BBDEFB; color:#0D47A1; }
+.dg-building-blocks .block-3 .block-files { background:#E1BEE7; color:#4A148C; }
+.dg-building-blocks .block-4 .block-files { background:#FFE0B2; color:#BF360C; }
+.dg-building-blocks .block-bullets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.77rem;
+}
+.dg-building-blocks .block-1 .block-bullets { color:#6D4C41; }
+.dg-building-blocks .block-2 .block-bullets { color:#1565C0; }
+.dg-building-blocks .block-3 .block-bullets { color:#4A148C; }
+.dg-building-blocks .block-4 .block-bullets { color:#E64A19; }
+.dg-building-blocks .block-bullets li::before { content:"• "; }
+/* when-loaded badge */
+.dg-building-blocks .when {
+  font-size: 0.68rem;
+  font-style: italic;
+  opacity: .7;
+  margin-top: 4px;
+}
+/* tooltip */
+.dg-building-blocks .tip {
+  display: none;
+  position: absolute;
+  right: 14px;
+  top: calc(100% + 8px);
+  background: #FFFDE7;
+  border: 1.5px solid #F9A825;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.75rem;
+  color: #5D4037;
+  max-width: 280px;
+  z-index: 10;
+  box-shadow: 0 4px 12px #0002;
+  pointer-events: none;
+}
+.dg-building-blocks .block-2 .tip { border-color:#1E88E5; background:#EBF5FB; color:#0D47A1; }
+.dg-building-blocks .block-3 .tip { border-color:#8E24AA; background:#F3E5F5; color:#4A148C; }
+.dg-building-blocks .block-4 .tip { border-color:#F4511E; background:#FBE9E7; color:#BF360C; }
+.dg-building-blocks .block:hover .tip { display: block; }
+/* dyk */
+.dg-building-blocks .dyk {
+  background: #FCE4EC;
+  border: 2px dashed #E91E63;
+  border-radius: 14px;
+  padding: 10px 16px;
+  font-size: 0.78rem;
+  color: #880E4F;
+  text-align: center;
+  margin-top: 14px;
+}
+.dg-building-blocks .dyk strong { color:#AD1457; }
+.dg-building-blocks .caption {
+  text-align: center;
+  font-size: 0.74rem;
+  color: #90A4AE;
+  font-style: italic;
+  margin-top: 14px;
+}
+</style>
+
+<p class="dg-title">🏗️ The Four Building Blocks</p>
+<p class="dg-subtitle">Every AI coding tool uses these same four ideas — only the filenames differ</p>
+
+<div class="blocks-list">
+
+  <div class="block block-1">
+    <div class="tip">💡 Think of it as the employee handbook — everyone reads it on day one, every session.</div>
+    <div class="num">📋</div>
+    <div class="block-body">
+      <div class="block-title">1. Project rules</div>
+      <div class="block-files">AGENTS.md · CLAUDE.md · GEMINI.md</div>
+      <ul class="block-bullets">
+        <li>briefing sheet for the whole project</li>
+        <li>sets tone, constraints, file conventions</li>
+        <li>every agent reads this at the start</li>
+      </ul>
+      <div class="when">⏰ loaded: every session, every agent</div>
+    </div>
+  </div>
+
+  <div class="block block-2">
+    <div class="tip">💡 Like a job description — written once, re-used every time that specialist is needed.</div>
+    <div class="num">🤖</div>
+    <div class="block-body">
+      <div class="block-title">2. Agent definitions</div>
+      <div class="block-files">.claude/agents/*.md · .codex/agents/*.toml</div>
+      <ul class="block-bullets">
+        <li>one specialist per file: role, tools, model</li>
+        <li>each has a name, description, tools list</li>
+        <li>keeps specialists focused and testable</li>
+      </ul>
+      <div class="when">⏰ loaded: only when that agent is delegated to</div>
+    </div>
+  </div>
+
+  <div class="block block-3">
+    <div class="tip">💡 Skills keep agents small and composable — load only what you need, pay only those tokens.</div>
+    <div class="num">🔧</div>
+    <div class="block-body">
+      <div class="block-title">3. Skills</div>
+      <div class="block-files">.claude/skills/&lt;name&gt;/SKILL.md</div>
+      <ul class="block-bullets">
+        <li>reusable manual + optional helper scripts</li>
+        <li>one skill teaches one capability</li>
+        <li>examples: era5-download, netcdf-conventions</li>
+      </ul>
+      <div class="when">⏰ loaded: only when explicitly invoked</div>
+    </div>
+  </div>
+
+  <div class="block block-4">
+    <div class="tip">💡 The safety net — even a rogue agent can't break these hard limits.</div>
+    <div class="num">🔒</div>
+    <div class="block-body">
+      <div class="block-title">4. Permissions</div>
+      <div class="block-files">.claude/settings.json</div>
+      <ul class="block-bullets">
+        <li>hard limits no agent can override</li>
+        <li>controls allowed tools and blocked paths</li>
+        <li>applied before every tool call, always</li>
+      </ul>
+      <div class="when">⏰ applied: always, before every tool call</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="dyk">
+  🌟 <strong>Did you know?</strong> The same four-block structure works in Claude Code, Codex, Gemini CLI, and others — learn it once and you understand them all!
+</div>
+<p class="caption">Hover each block to learn more · Same ideas in every AI coding tool — only filenames differ</p>
+</div>
