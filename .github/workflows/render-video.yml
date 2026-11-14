@@ -26,49 +26,6 @@ jobs:
           npx remotion browser ensure
           sudo apt-get install -y ffmpeg
 
-      - name: Generate narration (Kokoro TTS, af_bella)
-        run: |
-          if [ ! -f remotion/public/narration.wav ]; then
-            pip install "kokoro>=0.9.4" soundfile
-            python - <<'PYEOF'
-import numpy as np, soundfile as sf
-from kokoro import KPipeline
-SR = 24000
-SCENES = [
-  ["What if your computer could think, plan, and write code — all on its own?",
-   "In this tutorial, we'll build AI agents for climate data analysis."],
-  ["An agent runs a simple loop.",
-   "The AI thinks about your request, picks the right tool, runs it, and repeats — until the job is done."],
-  ["You define an agent with just a few files.",
-   "CLAUDE dot M D for project rules, AGENTS dot M D for instructions, and a skills folder for reusable tools."],
-  ["In AGENTS dot M D, you give your agent a name, a description, a list of tools, and clear instructions.",
-   "That's all you need to get started."],
-  ["Skills are reusable instruction bundles.",
-   "Load one line and your agent instantly knows how to download ERA5 data, read NetCDF files, or plot publication-quality figures."],
-  ["For complex tasks, your main agent spawns subagents — each with its own job.",
-   "They work in parallel, then report back. This is what makes agents so powerful."],
-  ["The climate pipeline runs five steps: download ERA5 data, check quality, compute trends, plot figures, and review results.",
-   "Fully automated, end to end."],
-  ["Download the template, follow the tutorial, and build your first climate agent today."],
-]
-pipe = KPipeline(lang_code="a")
-out = []
-for si, sc in enumerate(SCENES):
-  for ti, txt in enumerate(sc):
-    chunks = [np.asarray(a, dtype=np.float32) for _,_,a in pipe(txt, voice="af_bella", speed=1.0)]
-    out.append(np.concatenate(chunks) if chunks else np.array([], dtype=np.float32))
-    last = (ti == len(sc)-1)
-    if not (last and si == len(SCENES)-1):
-      out.append(np.zeros(int((0.70 if last else 0.30)*SR), dtype=np.float32))
-audio = np.concatenate(out)
-pk = np.max(np.abs(audio)); audio = audio*(10**(-3/20))/pk if pk>0 else audio
-sf.write("remotion/public/narration.wav", audio, SR, subtype="PCM_16")
-print(f"narration: {len(audio)/SR:.1f}s")
-PYEOF
-          else
-            echo "narration.wav already present, skipping TTS"
-          fi
-
       - name: Render video
         run: node render.mjs
 
