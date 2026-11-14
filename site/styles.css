@@ -79,65 +79,43 @@ a { color: var(--acc2); }
    ============================================================ */
 .topbar {
   position: sticky; top: 0; z-index: 50;
-  display: flex; align-items: center; gap: 14px; height: 60px; padding: 0 24px;
-  /* Dark gradient background that works in both light and dark modes */
-  background: linear-gradient(90deg, #060d1f 0%, #091825 50%, #07201a 100%);
-  backdrop-filter: blur(20px) saturate(200%);
-  -webkit-backdrop-filter: blur(20px) saturate(200%);
-  /* Teal-to-blue gradient bottom border */
-  border-bottom: 1px solid transparent;
-  box-shadow:
-    0 1px 0 0 rgba(45, 212, 191, .25),
-    0 1px 0 0 rgba(8, 145, 178, .15),
-    0 2px 20px rgba(0,0,0,.35);
-}
-/* Gradient bottom border via pseudo-element */
-.topbar::after {
-  content: "";
-  position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(13, 148, 136, .6) 20%,
-    rgba(45, 212, 191, .8) 50%,
-    rgba(8, 145, 178, .6) 80%,
-    transparent 100%);
+  display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 24px;
+  background: rgba(10, 15, 30, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 .brand {
-  font-weight: 800; font-size: 15px;
-  text-decoration: none; flex: 1; letter-spacing: -.02em;
-  /* Teal gradient text */
-  background: linear-gradient(90deg, #2dd4bf, #38bdf8);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-  transition: opacity .15s;
+  font-weight: 700; font-size: 14px;
+  text-decoration: none; flex: 1; letter-spacing: -.01em;
+  color: #e2e8f0;
+  transition: color .15s;
 }
-.brand:hover { opacity: .8; }
+.brand:hover { color: #fff; }
 .topbar-nav {
   display: flex; align-items: center; gap: 2px;
 }
 .topbar-link {
-  color: #64748b; font-size: 13.5px; font-weight: 500;
-  text-decoration: none; padding: 6px 12px; border-radius: 8px;
+  color: #64748b; font-size: 13px; font-weight: 500;
+  text-decoration: none; padding: 5px 11px; border-radius: 6px;
   transition: color .15s, background .15s;
   white-space: nowrap;
 }
-.topbar-link:hover { color: #2dd4bf; background: rgba(45,212,191,.08); }
-.theme-btn svg { width: 18px; height: 18px; display: block; margin: auto; }
+.topbar-link:hover { color: #cbd5e1; background: rgba(255,255,255,.06); }
+.theme-btn svg { width: 17px; height: 17px; display: block; margin: auto; }
 .menu-btn, .theme-btn {
-  border: 1px solid rgba(45, 212, 191, .2);
-  background: rgba(45, 212, 191, .07);
-  color: #94a3b8;
-  width: 38px; height: 38px; border-radius: 10px; font-size: 17px; cursor: pointer;
-  transition: border-color .2s, background .2s, color .2s, transform .15s, box-shadow .2s;
+  border: 1px solid rgba(255, 255, 255, .1);
+  background: transparent;
+  color: #64748b;
+  width: 36px; height: 36px; border-radius: 8px; font-size: 16px; cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
   flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
 }
 .menu-btn:hover, .theme-btn:hover {
-  border-color: rgba(45, 212, 191, .55);
-  background: rgba(45, 212, 191, .14);
-  color: #2dd4bf;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(45, 212, 191, .15);
+  border-color: rgba(255, 255, 255, .2);
+  background: rgba(255, 255, 255, .06);
+  color: #cbd5e1;
 }
 .menu-btn { display: none; }
 
@@ -211,12 +189,9 @@ a { color: var(--acc2); }
   text-align: center;
 }
 .eyebrow {
-  color: #2dd4bf; font-weight: 600;
-  text-transform: uppercase; letter-spacing: .1em; font-size: 13px;
+  color: #94a3b8; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .08em; font-size: 12px;
   margin: 0 0 16px; display: inline-block;
-  padding: 4px 14px; border-radius: 50px;
-  background: rgba(45, 212, 191, .12);
-  border: 1px solid rgba(45, 212, 191, .2);
 }
 .hero-title {
   font-size: clamp(32px, 5.5vw, 60px);
@@ -299,9 +274,7 @@ a { color: var(--acc2); }
 .toc-title {
   font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
   font-size: 11px; margin: 0 0 12px 0;
-  background: linear-gradient(90deg, var(--acc), #0891b2);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--muted);
 }
 .toc ul { list-style: none; margin: 0; padding: 0; }
 .toc li.grp > a {
