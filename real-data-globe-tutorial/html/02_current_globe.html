@@ -73,7 +73,7 @@
 <canvas id="c"></canvas>
 
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.min.js';
+import * as THREE from './three.module.min.js';
 
 const DATA_URL = '../data/currents.json';
 
@@ -141,6 +141,7 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 resize();
+animate();
 
 // ── particles ─────────────────────────────────────────────────────────────
 const NLAT = 181, NLON = 360;
@@ -273,7 +274,6 @@ fetch(DATA_URL)
     document.getElementById('meta').textContent =
       `${data.source} ${data.year} · ${data.grid.nlat}×${data.grid.nlon} grid · max ${speedMax.toFixed(2)} m/s`;
     buildParticles();
-    animate();
   })
   .catch(err => {
     document.getElementById('meta').textContent = `Error: ${err.message}`;
@@ -282,10 +282,9 @@ fetch(DATA_URL)
 
 function animate() {
   requestAnimationFrame(animate);
-  if (!uField) return;
   globe.rotation.x = rot.x; globe.rotation.y = rot.y;
   if (pMesh) { pMesh.rotation.x = rot.x; pMesh.rotation.y = rot.y; }
-  if (animating && pMesh) stepParticles();
+  if (animating && pMesh && uField) stepParticles();
   renderer.render(scene, camera);
 }
 

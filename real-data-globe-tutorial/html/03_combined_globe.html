@@ -71,7 +71,7 @@
 <canvas id="c"></canvas>
 
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.min.js';
+import * as THREE from './three.module.min.js';
 
 const WINDS_URL    = '../data/winds.json';
 const CURRENTS_URL = '../data/currents.json';
@@ -121,6 +121,7 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize); resize();
+animate();
 
 // ── shared utilities ──────────────────────────────────────────────────────
 const NLAT = 181, NLON = 360;
@@ -239,7 +240,6 @@ function checkBothLoaded() {
   if (loaded < 2) return;
   document.getElementById('loading').style.display = 'none';
   updateStatus();
-  animate();
 }
 
 let windMeta = null, currMeta = null;
