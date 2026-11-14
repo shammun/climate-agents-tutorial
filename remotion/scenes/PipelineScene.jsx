@@ -1,5 +1,5 @@
 import { AbsoluteFill, useCurrentFrame, interpolate } from 'remotion';
-import { ParticleCanvas } from '../components/ParticleCanvas.jsx';
+import { GlobeBackground } from '../components/GlobeBackground.jsx';
 
 const fi = (frame, start, dur = 20) =>
   interpolate(frame, [start, start + dur], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
@@ -25,7 +25,7 @@ export const PipelineScene = () => {
 
   return (
     <AbsoluteFill style={{ opacity: exitOp }}>
-      <ParticleCanvas />
+      <GlobeBackground opacity={0.35} />
       <AbsoluteFill style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', padding: '24px 72px', gap: 0,

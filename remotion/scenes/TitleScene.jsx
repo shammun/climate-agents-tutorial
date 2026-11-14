@@ -1,5 +1,6 @@
 import { AbsoluteFill, useCurrentFrame, interpolate } from 'remotion';
-import { ParticleCanvas } from '../components/ParticleCanvas.jsx';
+import { GlobeBackground } from '../components/GlobeBackground.jsx';
+import { TempStack } from '../components/TempStack.jsx';
 
 export const TitleScene = () => {
   const frame = useCurrentFrame();
@@ -13,12 +14,8 @@ export const TitleScene = () => {
 
   return (
     <AbsoluteFill style={{ opacity: exitOpacity }}>
-      <ParticleCanvas />
-      {/* Radial glow behind text */}
-      <AbsoluteFill style={{
-        background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(13,148,136,.18) 0%, transparent 70%)',
-        pointerEvents: 'none',
-      }} />
+      <GlobeBackground opacity={0.55} />
+      <TempStack x={1070} y={90} />
       <AbsoluteFill style={{
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',

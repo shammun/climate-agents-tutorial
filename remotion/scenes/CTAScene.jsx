@@ -1,5 +1,6 @@
 import { AbsoluteFill, useCurrentFrame, interpolate } from 'remotion';
-import { ParticleCanvas } from '../components/ParticleCanvas.jsx';
+import { GlobeBackground } from '../components/GlobeBackground.jsx';
+import { TempStack } from '../components/TempStack.jsx';
 
 const fi = (frame, start, dur = 30) =>
   interpolate(frame, [start, start + dur], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
@@ -16,12 +17,8 @@ export const CTAScene = () => {
 
   return (
     <AbsoluteFill style={{ opacity: exitOp }}>
-      <ParticleCanvas />
-      {/* Stronger radial glow for the CTA */}
-      <AbsoluteFill style={{
-        background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(13,148,136,.22) 0%, transparent 70%)',
-        pointerEvents: 'none',
-      }} />
+      <GlobeBackground opacity={0.5} />
+      <TempStack x={1070} y={90} />
       <AbsoluteFill style={{
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
