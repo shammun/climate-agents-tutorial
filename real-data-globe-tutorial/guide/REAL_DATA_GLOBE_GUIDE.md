@@ -65,10 +65,10 @@ Typical size: 50–200 MB depending on the year and grid.
 
 ### `01b_download_winds_ncep.py`
 
-Downloads `uwnd.10m.gauss.<YEAR>.nc` and `vwnd.10m.gauss.<YEAR>.nc` from `https://downloads.psl.noaa.gov/Datasets/ncep.reanalysis.derived/surface_gauss/`. These are on a T62 Gaussian grid (192 × 94 points). The processing script handles the regridding.
+Downloads `uwnd.10m.gauss.<YEAR>.nc` and `vwnd.10m.gauss.<YEAR>.nc` from `https://downloads.psl.noaa.gov/Datasets/ncep.reanalysis/surface_gauss/`. Each file holds one year of 6-hourly values on a T62 Gaussian grid (192 × 94 points). The processing script averages over time and handles the regridding.
 
 Output: `data/ncep_uwnd_<YEAR>.nc` and `data/ncep_vwnd_<YEAR>.nc`
-Typical size: ~5 MB each.
+Typical size: ~50 MB each.
 
 ### `02_download_currents_godas.py`
 
@@ -88,7 +88,7 @@ The main conversion step. For each source it:
 1. Opens the NetCDF file(s) with xarray.
 2. Computes the annual mean over all 12 monthly time steps.
 3. Extracts the u and v arrays and their lat/lon coordinates.
-4. For GODAS: selects level index 0 (surface) and converts cm/s to m/s.
+4. For GODAS: selects level index 0 (surface, 5 m depth) and reads the `units` attribute; current files on NOAA PSL are already in m/s, older copies in cm/s are divided by 100.
 5. Regrids both fields to a uniform 1°×1° grid (181 latitudes × 360 longitudes) using `scipy.interpolate.RegularGridInterpolator` with bilinear interpolation and longitude wrap-around padding.
 6. Replaces NaN values (land mask) with 0.0 so the browser can read the flat array without branching.
 7. Writes the result as a compact JSON file.
@@ -124,59 +124,72 @@ Checks the JSON file for required keys, correct array lengths, the absence of Na
 
 ## Part 3 — How the visualization works
 
+### Files in `html/`
+
+| File | Role |
+|---|---|
+| `three.global.min.js` | Three.js r168 as a plain script (sets `window.THREE`) |
+| `blue_marble.js` | NASA Blue Marble Earth image embedded as a data URL (`window.BLUE_MARBLE_DATA_URL`) |
+| `flow_globe.js` | The shared code: globe, drag/zoom, field sampling, particle trails (`window.FlowGlobe`) |
+| `01_…`, `02_…`, `03_…` | Pages: each creates a globe and one or two flow layers with its own settings |
+
+A page needs only a few lines:
+
+```js
+const globe = FlowGlobe.createGlobe({ canvas, textureUrl: window.BLUE_MARBLE_DATA_URL });
+FlowGlobe.loadData('WIND_DATA', '../data/winds.json').then(data => {
+  const layer = FlowGlobe.createFlowLayer(globe, data, { count: 3000, degPerMs: 0.06 });
+  globe.onFrame(() => layer.step(1));
+});
+```
+
 ### Coordinate system
 
-Three.js uses a right-handed coordinate system with y pointing up. A point on the globe at latitude φ and longitude λ is placed at:
+Three.js uses a right-handed coordinate system with y pointing up. A point at latitude φ and longitude λ is placed at:
 
 ```
-x = R · sin(φ') · cos(λ')
-y = R · cos(φ')
-z = R · sin(φ') · sin(λ')
+x =  R · cos(φ) · cos(λ)
+y =  R · sin(φ)
+z = −R · cos(φ) · sin(λ)
 ```
 
-where `φ' = (90 − lat) × π/180` (colatitude) and `λ' = lon × π/180`.
+The minus sign on z is required to match how `THREE.SphereGeometry` wraps an equirectangular image (longitude −180° at the left edge). With `+sin(λ)` the particles would be mirrored east–west relative to the continents on the texture.
 
-The globe sphere (`SphereGeometry`) is centred at the origin with radius `R = 1.0`. Particles are placed at `R + ε` (a tiny offset above the surface, 0.001–0.0025) so they are not hidden inside the sphere geometry.
+The Earth sphere has radius `R = 1.0`. Trails are drawn slightly above it (`radius` 1.003 for currents, 1.006–1.008 for winds) so the sphere does not hide them. The sphere and all flow layers sit in one `THREE.Group`, so dragging rotates them together.
 
 ### Particle advection
 
-Each particle stores its current latitude and longitude in a flat `Float32Array`. Every animation frame (`requestAnimationFrame`), the step function:
+Each particle stores its latitude and longitude. Every animation frame (`requestAnimationFrame`), `step()`:
 
-1. Looks up the u and v values at the particle's (lat, lon) using bilinear interpolation.
-2. Converts the velocity to degrees per step:
-   - `Δlat = v × DT × speedScale`
-   - `Δlon = u × DT × speedScale / cos(lat)` — the cosine term corrects for the shrinking of longitude degrees near the poles.
-3. Updates the particle's position, wraps longitude to [0, 360), and reseeds if the particle goes out of bounds.
-4. Converts the new (lat, lon) to Cartesian (x, y, z) and writes it into the BufferGeometry's `position` attribute.
-5. Computes a colour from the wind/current speed at that cell and writes it to the `color` attribute.
-6. After processing all particles, sets `attribute.needsUpdate = true` to upload the new buffer to the GPU.
+1. Looks up u and v at the particle's (lat, lon) using bilinear interpolation of the 1° grid (longitude wraps around).
+2. Converts the velocity to degrees per frame:
+   - `Δlat = v × k`
+   - `Δlon = u × k / cos(lat)` — the cosine term corrects for longitude degrees shrinking towards the poles
+   - `k = degPerMs × speedScale × speed^(speedExponent − 1)`. With `speedExponent = 1` the step is proportional to the speed. The currents page uses `0.5`, which makes the step grow with √speed, so slow gyre currents (a few cm/s) still leave visible streaks. The colour still shows the true speed.
+3. Caps the step at `maxStep` degrees, so the fastest jets do not jump across the globe.
+4. Respawns the particle at a random place when it gets too old, reaches a pole, or (currents only) drifts onto land.
 
-**DT tuning:** `DT = 0.08` means a 10 m/s wind moves a particle 0.8° per frame at 60 fps. At the equator that is about 89 km per frame — visually fast but not excessive. Reduce DT for a more realistic (slower) animation or increase `speedScale` for emphasis.
+**Speed settings:** winds use `degPerMs = 0.06`, so a 10 m/s wind moves 0.6° per frame. Currents use `degPerMs = 0.8` with `speedExponent = 0.5`, so 0.1 m/s → 0.25° per frame and 0.5 m/s → 0.57° per frame. The **Faster** and **Slower** buttons multiply all of these by `speedScale`.
 
-**Age and fade:** Each particle has an `age` counter. When `age > maxAge` (120–160 frames), the particle is reseeded at a random location. The colour is multiplied by `fade = 1 − age/maxAge`, so particles fade out as they age rather than abruptly disappearing.
+**Spawning:** new particles are placed uniformly by area (`lat = asin(2·rand − 1)`). For currents, `minSpeed = 0.02` makes the spawn function retry until it finds a point where the current is at least 2 cm/s. GODAS land cells are 0, so particles start in the ocean.
+
+### Trails
+
+Each particle remembers its last `trail` positions (12–20) in a history buffer, newest first. Each frame the history is shifted by one slot (`copyWithin`) and the new position is written at the front. The trail is drawn as `trail − 1` line segments with `THREE.LineSegments`:
+
+- **Colour:** taken from the palette at the particle's current speed.
+- **Brightness:** fades from the head (1) to the tail (0), and also fades in over a particle's first 10 frames and out over its last 15.
+- **Blending:** `AdditiveBlending`. Black adds nothing, so faded segments disappear, and overlapping trails in strong flows glow brighter.
+
+When a particle respawns, its whole history is set to the new point. Without this, a line would be drawn from the old position to the new one, right across the globe.
 
 ### BufferGeometry updates
 
-Three.js keeps geometry on the GPU. To update positions every frame:
-
-1. Store a reference to the BufferAttribute returned by `geo.getAttribute('position')`.
-2. Call `attribute.setXYZ(i, x, y, z)` for each particle that moved.
-3. Set `attribute.needsUpdate = true` after the loop.
-
-This is more efficient than rebuilding the geometry each frame, but it still uploads the entire buffer to the GPU every frame (Three.js does not support partial uploads in this API). For 800–1000 particles the upload is ~10 µs and invisible in the frame budget. Beyond ~5000 particles consider a custom shader.
+All trails of a layer are stored in one `BufferGeometry` with `position` and `color` attributes. The step function writes the new values into the attribute arrays and sets `needsUpdate = true`, which uploads both buffers to the GPU once per frame. For 3000 particles × 15 segments this takes under 2 ms on a laptop. For 50 000+ particles, consider a GPU shader (see Part 4).
 
 ### Globe rotation
 
-The globe rotation is driven by the `rot.x` and `rot.y` variables, which are updated by mouse drag and touch events. Both the globe mesh and the particle mesh are assigned the same rotation, keeping them synchronised:
-
-```js
-globe.rotation.x = rot.x;
-globe.rotation.y = rot.y;
-pMesh.rotation.x = rot.x;
-pMesh.rotation.y = rot.y;
-```
-
-A more sophisticated implementation would apply the rotation as a quaternion to avoid gimbal lock and enable inertial spinning after a drag, but for a tutorial the simpler approach is clear and sufficient.
+`createGlobe` keeps the rotation in `rot.x` (tilt) and `rot.y` (spin), updated by pointer events (mouse, pen and touch) and applied to the Earth group every frame. `view: { lat, lon }` sets which point faces the camera at the start and after **Reset view**. A point at longitude λ sits at angle −λ around the y axis, and the camera looks at angle 90°, so `rot.y = −(90° + λ)` and `rot.x = lat`.
 
 ---
 
@@ -196,34 +209,13 @@ u_mean = ds[u_name].isel(time=0).values
 
 You could then generate 12 JSON files and load them one at a time in the browser to create a seasonal cycle animation.
 
-### Add a land mask texture
+### Use a different Earth texture
 
-To make the ocean/land distinction visible on the globe sphere, load a texture from a public CDN:
+The pages pass `window.BLUE_MARBLE_DATA_URL` (from `blue_marble.js`) to `createGlobe({ textureUrl })`. An image is embedded as a data URL because browsers refuse to use a separate image file as a WebGL texture on a page opened from disk. When the pages are served over HTTP, any image URL works, for example `textureUrl: '../my_texture.jpg'`. `dimTexture` (default 0.55) darkens the image so that the trails stay readable on top of it.
 
-```js
-const loader  = new THREE.TextureLoader();
-const texture = loader.load('https://unpkg.com/three-globe@2.31.0/example/img/earth-dark.jpg');
-globeMat.map = texture;
-globeMat.needsUpdate = true;
-```
+### Change the colours
 
-This replaces the flat dark colour with a realistic shaded-relief map. Because the texture loads asynchronously, the globe renders in its fallback colour until the image arrives.
-
-### Colour by direction instead of speed
-
-Replace the `speedColor` function with one that maps the wind angle to a hue:
-
-```js
-function directionColor(u, v) {
-  const angle = Math.atan2(v, u);           // −π to +π
-  const hue   = (angle / (2 * Math.PI) + 0.5) % 1;
-  const c     = new THREE.Color();
-  c.setHSL(hue, 0.9, 0.55);
-  return c;
-}
-```
-
-This makes westerlies, trade winds, and monsoon flows visible as distinct colour bands.
+The palettes are lists of `[t, r, g, b]` stops in `FlowGlobe.PALETTES`. Pass your own with `palette: [...]`. `colourMax` sets the speed that maps to the last colour, and `colourGamma < 1` spreads out the low speeds.
 
 ### GPU particle shader
 
@@ -236,13 +228,15 @@ A good starting point is the Three.js `GPUComputationRenderer` example, which us
 Generate a JSON file for each year and add a year selector to the UI:
 
 ```js
+let layer;
 async function loadYear(year) {
   const data = await fetch(`../data/winds_${year}.json`).then(r => r.json());
-  uField   = data.uField;
-  vField   = data.vField;
-  speedMax = data.speedMax;
+  if (layer) layer.visible = false;          // hide the old layer
+  layer = FlowGlobe.createFlowLayer(globe, data, { count: 3000, degPerMs: 0.06 });
 }
 ```
+
+(`fetch` needs the pages to be served over HTTP; from `file://` write one `.js` file per year instead, as `04_process_to_json.py` does.)
 
 Comparing ERA5 annual means across years makes multi-decadal wind shifts visible — for example, the strengthening of the Southern Ocean westerlies since the 1980s.
 
@@ -284,11 +278,11 @@ If `lat0` were `+90` (north pole) instead, the formula would need to be `(90 −
 
 ### Particles only appear over ocean (currents file) or only over land (wind file)
 
-GODAS data is ocean-only; grid cells over land have values of 0 (they were NaN in the NetCDF, replaced with 0 by the processing script). The step function in `02_current_globe.html` reseeds particles that land on a zero-speed cell after 5 steps, so wind particles naturally migrate to ocean regions. If you want particles in both regions, use the wind file for the current visualization too.
+This is expected for currents. GODAS data covers only the ocean: land cells were NaN in the NetCDF, and the processing script sets them to 0. The currents layer uses `minSpeed: 0.02`, so particles are only spawned where the current is at least 2 cm/s, and are respawned when they drift into slower water or onto land. Wind particles cover the whole globe because `minSpeed` is 0 for winds.
 
 ### Speed looks too slow or too fast
 
-Adjust the `DT` constant in the HTML file. `DT = 0.08` is calibrated for wind speeds in m/s. Ocean currents are typically 10–50× slower than wind speeds (0.05–1 m/s vs. 1–15 m/s), but the GODAS file already converts cm/s → m/s, so the same DT value will make ocean particles appear much slower. Increase `DT` or the default `speedScale` in `02_current_globe.html` to compensate.
+Use the **Faster**/**Slower** buttons, or change `degPerMs` in the page's `createFlowLayer` call. Winds use 0.06. Currents use 0.8 with `speedExponent: 0.5`, because ocean currents are 10–100× slower than winds (0.02–1 m/s vs. 1–15 m/s). If currents look 100× too slow, check the processing output: it prints the units it found in the GODAS file. Current NOAA PSL files are in m/s, older copies in cm/s.
 
 ### CDS download is queued for more than 30 minutes
 

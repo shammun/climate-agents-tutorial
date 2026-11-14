@@ -212,9 +212,13 @@ def load_godas(year: int):
         u_surf = ds_u[u_var]
         v_surf = ds_v[v_var]
 
-    # Annual mean; convert cm/s → m/s
-    u_mean = u_surf.mean(dim="time").values.astype(np.float32) / 100.0
-    v_mean = v_surf.mean(dim="time").values.astype(np.float32) / 100.0
+    # Annual mean. Read the units from the file instead of assuming them:
+    # current GODAS files on NOAA PSL store m/s; older copies used cm/s.
+    units = str(ds_u[u_var].attrs.get("units", "m/s")).strip().lower()
+    scale = 0.01 if units.startswith("cm") else 1.0
+    print(f"  Units in file: '{units}' (scale factor to m/s: {scale})")
+    u_mean = u_surf.mean(dim="time").values.astype(np.float32) * scale
+    v_mean = v_surf.mean(dim="time").values.astype(np.float32) * scale
     lats   = ds_u[lat_name].values.astype(np.float64)
     lons   = ds_u[lon_name].values.astype(np.float64)
     ds_u.close()

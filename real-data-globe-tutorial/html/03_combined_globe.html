@@ -6,7 +6,7 @@
 <title>Combined Wind + Ocean Currents Globe</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #060d1a; color: #e0eaf8; font-family: system-ui, sans-serif; overflow: hidden; }
+  body { background: #03070f; color: #e0eaf8; font-family: system-ui, sans-serif; overflow: hidden; }
   canvas { display: block; }
 
   #ui {
@@ -25,6 +25,7 @@
     cursor: pointer; font-size: 12px; transition: background 0.15s;
   }
   .btn:hover { background: rgba(255,255,255,0.18); }
+  .btn:focus-visible { outline: 2px solid #00d2b4; outline-offset: 2px; }
   .btn.active { background: rgba(0,210,180,0.22); border-color: #00d2b4; color: #00d2b4; }
   .btn.active-orange { background: rgba(255,120,0,0.22); border-color: #ff7800; color: #ffaa44; }
 
@@ -32,17 +33,18 @@
     position: fixed; bottom: 18px; left: 18px; z-index: 10;
     background: rgba(6,13,26,0.78); border-radius: 8px;
     padding: 10px 14px; font-size: 12px; backdrop-filter: blur(4px);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.08); min-width: 190px;
   }
-  #legend h3 { font-size: 11px; color: #8ab4d8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em; }
-  .l-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
-  .l-dot { width: 10px; height: 10px; border-radius: 50%; }
+  #legend h3 { font-size: 11px; color: #8ab4d8; margin: 0 0 5px; text-transform: uppercase; letter-spacing: .06em; }
+  #legend h3 + .bar { margin-bottom: 2px; }
+  .bar { height: 8px; border-radius: 4px; }
+  .bar-labels { display: flex; justify-content: space-between; font-size: 11px; color: #8ab4d8; margin: 2px 0 8px; }
 
-  #status { position: fixed; bottom: 18px; right: 18px; z-index: 10; font-size: 12px; color: #8ab4d8; pointer-events: none; }
+  #status { position: fixed; bottom: 18px; right: 18px; z-index: 10; font-size: 12px; color: #8ab4d8; pointer-events: none; text-align: right; }
 
   #loading {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-    font-size: 14px; color: #8ab4d8; z-index: 20;
+    font-size: 14px; color: #8ab4d8; z-index: 20; text-align: center; padding: 0 16px;
   }
 </style>
 </head>
@@ -62,277 +64,115 @@
   </div>
 </div>
 <div id="legend">
-  <h3>Layers</h3>
-  <div class="l-row"><div class="l-dot" style="background:#00d2b4"></div><span>Atmospheric wind (ERA5/NCEP)</span></div>
-  <div class="l-row"><div class="l-dot" style="background:#ff7800"></div><span>Ocean current (GODAS)</span></div>
+  <h3>Wind 10 m</h3>
+  <div class="bar" id="barWind"></div>
+  <div class="bar-labels"><span>0</span><span id="maxWind">— m/s</span></div>
+  <h3>Ocean current</h3>
+  <div class="bar" id="barCurr"></div>
+  <div class="bar-labels"><span>0</span><span id="maxCurr">— m/s</span></div>
 </div>
-<div id="status">loading…</div>
+<div id="status"></div>
 <div id="loading">Loading data…</div>
-<canvas id="c"></canvas>
+<canvas id="c" aria-label="Globe with animated trails of annual-mean winds and ocean surface currents"></canvas>
 
 <!-- Plain (non-module) scripts so the page also works when opened directly from disk (file://) -->
 <script src="three.global.min.js"></script>
+<script src="blue_marble.js"></script>
+<script src="flow_globe.js"></script>
 <script src="../data/winds.js"></script>
 <script src="../data/currents.js"></script>
 <script>
 const WINDS_URL    = '../data/winds.json';
 const CURRENTS_URL = '../data/currents.json';
+const { loadData, createGlobe, createFlowLayer, PALETTES } = FlowGlobe;
+const $ = id => document.getElementById(id);
 
-// Data comes from ../data/*.js (works from file://) or, failing that, the .json files over HTTP.
-function loadData(globalName, url) {
-  if (window[globalName]) return Promise.resolve(window[globalName]);
-  if (location.protocol === 'file:') return Promise.reject(new Error('no data yet: run python/04_process_to_json.py'));
-  return fetch(url).then(r => {
-    if (!r.ok) throw new Error(`no data yet (HTTP ${r.status}): run python/04_process_to_json.py`);
-    return r.json();
-  });
-}
-
-// ── scene ─────────────────────────────────────────────────────────────────
-const canvas   = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-const scene  = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-camera.position.set(0, 0, 2.6);
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-const sun = new THREE.DirectionalLight(0xffffff, 0.7);
-sun.position.set(3, 2, 2);
-scene.add(sun);
-
-const GLOBE_R = 1.0;
-const globe = new THREE.Mesh(
-  new THREE.SphereGeometry(GLOBE_R, 64, 64),
-  new THREE.MeshPhongMaterial({ color: 0x1c4c76, emissive: 0x0a1e32, specular: 0x1a3355, shininess: 25 }),
-);
-scene.add(globe);
-scene.add(new THREE.Mesh(
-  new THREE.SphereGeometry(GLOBE_R * 1.03, 32, 32),
-  new THREE.MeshBasicMaterial({ color: 0x002244, transparent: true, opacity: 0.05, side: THREE.BackSide }),
-));
-
-// ── drag / zoom ───────────────────────────────────────────────────────────
-const rot = { x: 0.2, y: 0 };
-let isDragging = false, lastX = 0, lastY = 0;
-canvas.addEventListener('mousedown', e  => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
-canvas.addEventListener('mousemove', e => {
-  if (!isDragging) return;
-  rot.y += (e.clientX - lastX) * 0.005;
-  rot.x = Math.max(-1.4, Math.min(1.4, rot.x + (e.clientY - lastY) * 0.005));
-  lastX = e.clientX; lastY = e.clientY;
+const globe = createGlobe({
+  canvas: $('c'),
+  textureUrl: window.BLUE_MARBLE_DATA_URL,
+  view: { lat: 20, lon: -40 },
 });
-window.addEventListener('mouseup', () => isDragging = false);
-canvas.addEventListener('wheel', e => {
-  camera.position.z = Math.max(1.4, Math.min(5, camera.position.z + e.deltaY * 0.002));
-  e.preventDefault();
-}, { passive: false });
-function resize() {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-}
-window.addEventListener('resize', resize); resize();
 
-// ── shared utilities ──────────────────────────────────────────────────────
-const NLAT = 181, NLON = 360;
+let windLayer = null, currentLayer = null, animating = true, speedScale = 1;
+let windMeta = null, currMeta = null, pending = 2;
+const errors = [];
 
-function llToXYZ(lat, lon, r) {
-  const phi   = (90 - lat) * Math.PI / 180;
-  const theta = lon        * Math.PI / 180;
-  return new THREE.Vector3(
-    r * Math.sin(phi) * Math.cos(theta),
-    r * Math.cos(phi),
-    r * Math.sin(phi) * Math.sin(theta),
-  );
+function updateText() {
+  const parts = [];
+  if (windMeta) parts.push(`Winds: ${windMeta.source} ${windMeta.year}`);
+  if (currMeta) parts.push(`Currents: ${currMeta.source} ${currMeta.year}`);
+  $('meta').textContent = parts.concat(errors).join('  ·  ') || 'loading…';
+  $('status').textContent =
+    `${windLayer && windLayer.visible ? windLayer.count : 0} wind + ` +
+    `${currentLayer && currentLayer.visible ? currentLayer.count : 0} current particles`;
 }
 
-function sampleField(uF, vF, lat, lon) {
-  const latIdx = (lat + 90) / 180 * (NLAT - 1);
-  const lonIdx = ((lon % 360 + 360) % 360) / 359 * (NLON - 1);
-  const li = Math.floor(latIdx), lf = latIdx - li;
-  const lo = Math.floor(lonIdx), lof = lonIdx - lo;
-  const li1 = Math.min(li + 1, NLAT - 1);
-  const lo1 = (lo + 1) % NLON;
-  const idx = r => c => r * NLON + c;
-  const u = (1-lf)*(1-lof)*uF[idx(li)(lo)]  + (1-lf)*lof*uF[idx(li)(lo1)] +
-              lf*(1-lof)*uF[idx(li1)(lo)] + lf*lof*uF[idx(li1)(lo1)];
-  const v = (1-lf)*(1-lof)*vF[idx(li)(lo)]  + (1-lf)*lof*vF[idx(li)(lo1)] +
-              lf*(1-lof)*vF[idx(li1)(lo)] + lf*lof*vF[idx(li1)(lo1)];
-  return [u, v];
-}
-
-// ── layer factory ─────────────────────────────────────────────────────────
-function makeLayer({ N, maxAge, heightOffset, uField, vField, speedMax, colorFn, dtScale }) {
-  const positions = new Float32Array(N * 3);
-  const ages      = new Float32Array(N);
-  const posArr    = new Float32Array(N * 3);
-  const colArr    = new Float32Array(N * 3);
-
-  function resetParticle(i) {
-    const phi   = Math.acos(2 * Math.random() - 1);
-    const theta = Math.random() * 2 * Math.PI;
-    positions[i*3]   = 90  - phi   * 180 / Math.PI;
-    positions[i*3+1] = theta * 180 / Math.PI;
-    ages[i] = Math.random() * maxAge;
-  }
-  for (let i = 0; i < N; i++) resetParticle(i);
-
-  for (let i = 0; i < N; i++) {
-    const p = llToXYZ(positions[i*3], positions[i*3+1], GLOBE_R + heightOffset);
-    posArr[i*3] = p.x; posArr[i*3+1] = p.y; posArr[i*3+2] = p.z;
-  }
-
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-  geo.setAttribute('color',    new THREE.BufferAttribute(colArr, 3));
-  const mat  = new THREE.PointsMaterial({ size: 0.006, vertexColors: true, transparent: true, opacity: 0.85, sizeAttenuation: true });
-  const mesh = new THREE.Points(geo, mat);
-  scene.add(mesh);
-
-  function step(speedScale) {
-    const pa = geo.getAttribute('position');
-    const ca = geo.getAttribute('color');
-    for (let i = 0; i < N; i++) {
-      ages[i]++;
-      if (ages[i] > maxAge) resetParticle(i);
-      let lat = positions[i*3], lon = positions[i*3+1];
-      const [u, v] = sampleField(uField, vField, lat, lon);
-      const spd    = Math.sqrt(u*u + v*v);
-      const cosLat = Math.cos(lat * Math.PI / 180);
-      lat += v * dtScale * speedScale;
-      lon  = ((lon + (cosLat > 0.02 ? u * dtScale * speedScale / cosLat : 0)) + 360) % 360;
-      if (lat > 90 || lat < -90) { ages[i] = maxAge + 1; continue; }
-      positions[i*3] = lat; positions[i*3+1] = lon;
-      const p = llToXYZ(lat, lon, GLOBE_R + heightOffset);
-      pa.setXYZ(i, p.x, p.y, p.z);
-      const fade = 1 - ages[i] / maxAge;
-      const c    = colorFn(spd, speedMax);
-      ca.setXYZ(i, c.r * fade, c.g * fade, c.b * fade);
-    }
-    pa.needsUpdate = true; ca.needsUpdate = true;
-  }
-
-  return { mesh, step };
-}
-
-// ── colour functions ──────────────────────────────────────────────────────
-function windColor(spd, spdMax) {
-  const t  = Math.min(1, spd / (spdMax * 0.6));
-  if (t < 0.5) {
-    const a = t * 2;
-    return { r: a * 0.0, g: a * 0.82, b: a * 0.70 };
-  }
-  const a = (t - 0.5) * 2;
-  return { r: a, g: 0.82 + a * 0.18, b: 0.70 + a * 0.30 };
-}
-function currentColor(spd, spdMax) {
-  const STOPS = [
-    [0.00, 0.00, 0.60, 0.80],
-    [0.35, 0.10, 0.30, 1.00],
-    [0.70, 1.00, 0.47, 0.00],
-    [1.00, 1.00, 0.80, 0.00],
-  ];
-  const t = Math.min(1, spd / (spdMax * 0.7));
-  let lo = STOPS[0], hi = STOPS[STOPS.length - 1];
-  for (let j = 0; j < STOPS.length - 1; j++) {
-    if (t >= STOPS[j][0] && t <= STOPS[j+1][0]) { lo = STOPS[j]; hi = STOPS[j+1]; break; }
-  }
-  const a = (t - lo[0]) / Math.max(1e-6, hi[0] - lo[0]);
-  return { r: lo[1] + a*(hi[1]-lo[1]), g: lo[2] + a*(hi[2]-lo[2]), b: lo[3] + a*(hi[3]-lo[3]) };
-}
-
-// ── load both datasets ────────────────────────────────────────────────────
-let loaded = 0, windLayer, currentLayer, animating = true, speedScale = 1.0;
-let showWind = true, showCurrent = true;
-
-function checkBothLoaded() {
-  loaded++;
-  if (loaded < 2) return;
-  document.getElementById('loading').style.display = 'none';
-  updateStatus();
-}
-
-let windMeta = null, currMeta = null;
-function updateMeta() {
-  if (!windMeta || !currMeta) return;
-  document.getElementById('meta').textContent =
-    `Winds: ${windMeta.source} ${windMeta.year}  ·  Currents: ${currMeta.source} ${currMeta.year}`;
-}
-function updateStatus() {
-  const wn = windLayer ? windLayer.N : 0;
-  const cn = currentLayer ? currentLayer.N : 0;
-  document.getElementById('status').textContent =
-    `${showWind ? wn : 0} wind + ${showCurrent ? cn : 0} current particles`;
-}
-
-function showLoadError(label, err) {
-  const msg = `${label}: ${err.message}`;
-  document.getElementById('meta').textContent = msg;
-  document.getElementById('loading').textContent = msg;
-  console.error(err);
+function done() {
+  if (--pending > 0) return;
+  // Hide the overlay once both loads have finished; keep it if both failed.
+  if (windLayer || currentLayer) $('loading').style.display = 'none';
+  else $('loading').textContent = errors.join(' · ');
+  updateText();
 }
 
 loadData('WIND_DATA', WINDS_URL)
   .then(data => {
-    windMeta = data; updateMeta();
-    windLayer = { ...makeLayer({
-      N: 700, maxAge: 120, heightOffset: 0.0025,
-      uField: data.uField, vField: data.vField, speedMax: data.speedMax,
-      colorFn: windColor, dtScale: 0.08,
-    }), N: 700 };
-    checkBothLoaded();
+    windMeta = data;
+    // Winds sit slightly higher above the surface than currents and are dimmer,
+    // so the ocean currents remain readable underneath.
+    windLayer = createFlowLayer(globe, data, {
+      count: 2200, trail: 14, degPerMs: 0.06, maxStep: 1.2, radius: 1.008,
+      palette: PALETTES.wind, colourMax: data.speedMax * 0.8, opacity: 0.6,
+    });
+    $('barWind').style.background = windLayer.legendCss;
+    $('maxWind').textContent = `${(data.speedMax * 0.8).toFixed(0)}+ m/s`;
   })
-  .catch(err => showLoadError('Winds', err));
+  .catch(err => { errors.push(`Winds: ${err.message}`); console.error(err); })
+  .finally(done);
 
 loadData('CURRENT_DATA', CURRENTS_URL)
   .then(data => {
-    currMeta = data; updateMeta();
-    currentLayer = { ...makeLayer({
-      N: 400, maxAge: 160, heightOffset: 0.001,
-      uField: data.uField, vField: data.vField, speedMax: data.speedMax,
-      colorFn: currentColor, dtScale: 0.12,
-    }), N: 400 };
-    checkBothLoaded();
+    currMeta = data;
+    currentLayer = createFlowLayer(globe, data, {
+      count: 3500, trail: 20, degPerMs: 0.8, speedExponent: 0.5, maxStep: 0.7, radius: 1.003,
+      palette: PALETTES.current, colourMax: data.speedMax * 0.6, colourGamma: 0.5,
+      minSpeed: 0.02, opacity: 1.0,
+    });
+    $('barCurr').style.background = currentLayer.legendCss;
+    $('maxCurr').textContent = `${(data.speedMax * 0.6).toFixed(1)}+ m/s`;
   })
-  .catch(err => showLoadError('Currents', err));
+  .catch(err => { errors.push(`Currents: ${err.message}`); console.error(err); })
+  .finally(done);
 
-function animate() {
-  requestAnimationFrame(animate);
-  globe.rotation.x = rot.x; globe.rotation.y = rot.y;
-  if (windLayer)    { windLayer.mesh.rotation.x    = rot.x; windLayer.mesh.rotation.y    = rot.y; }
-  if (currentLayer) { currentLayer.mesh.rotation.x = rot.x; currentLayer.mesh.rotation.y = rot.y; }
-  if (animating) {
-    if (windLayer    && showWind)    windLayer.step(speedScale);
-    if (currentLayer && showCurrent) currentLayer.step(speedScale);
-  }
-  renderer.render(scene, camera);
-}
+globe.onFrame(() => {
+  if (!animating) return;
+  if (windLayer    && windLayer.visible)    windLayer.step(speedScale);
+  if (currentLayer && currentLayer.visible) currentLayer.step(speedScale);
+});
 
 // ── controls ──────────────────────────────────────────────────────────────
-document.getElementById('btnPlay').addEventListener('click', function() {
+$('btnPlay').addEventListener('click', function () {
   animating = !animating;
   this.textContent = animating ? 'Pause' : 'Play';
   this.classList.toggle('active', animating);
 });
-document.getElementById('btnWind').addEventListener('click', function() {
-  showWind = !showWind;
-  if (windLayer) windLayer.mesh.visible = showWind;
-  this.textContent = showWind ? 'Wind on' : 'Wind off';
-  this.classList.toggle('active', showWind);
-  updateStatus();
+$('btnWind').addEventListener('click', function () {
+  if (!windLayer) return;
+  windLayer.visible = !windLayer.visible;
+  this.textContent = windLayer.visible ? 'Wind on' : 'Wind off';
+  this.classList.toggle('active', windLayer.visible);
+  updateText();
 });
-document.getElementById('btnCurrent').addEventListener('click', function() {
-  showCurrent = !showCurrent;
-  if (currentLayer) currentLayer.mesh.visible = showCurrent;
-  this.textContent = showCurrent ? 'Currents on' : 'Currents off';
-  this.classList.toggle('active-orange', showCurrent);
-  updateStatus();
+$('btnCurrent').addEventListener('click', function () {
+  if (!currentLayer) return;
+  currentLayer.visible = !currentLayer.visible;
+  this.textContent = currentLayer.visible ? 'Currents on' : 'Currents off';
+  this.classList.toggle('active-orange', currentLayer.visible);
+  updateText();
 });
-document.getElementById('btnFaster').addEventListener('click', () => { speedScale = Math.min(4, speedScale * 1.4); });
-document.getElementById('btnSlower').addEventListener('click', () => { speedScale = Math.max(0.1, speedScale / 1.4); });
-document.getElementById('btnReset').addEventListener('click',  () => { rot.x = 0.2; rot.y = 0; camera.position.z = 2.6; });
-animate();
+$('btnFaster').addEventListener('click', () => { speedScale = Math.min(4, speedScale * 1.4); });
+$('btnSlower').addEventListener('click', () => { speedScale = Math.max(0.1, speedScale / 1.4); });
+$('btnReset').addEventListener('click', () => globe.resetView());
 </script>
 </body>
 </html>

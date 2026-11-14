@@ -6,7 +6,7 @@
 <title>Ocean Currents Globe — Real GODAS Data</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #04101e; color: #d8eaf8; font-family: system-ui, sans-serif; overflow: hidden; }
+  body { background: #03070f; color: #d8eaf8; font-family: system-ui, sans-serif; overflow: hidden; }
   canvas { display: block; }
 
   #ui {
@@ -17,7 +17,7 @@
     font-size: 13px; gap: 12px; flex-wrap: wrap;
   }
   #ui h1 { font-size: 15px; font-weight: 600; white-space: nowrap; }
-  #meta  { color: #7ab0d4; font-size: 12px; white-space: nowrap; }
+  #meta  { color: #7ab0d4; font-size: 12px; }
   #controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .btn {
     background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
@@ -25,26 +25,27 @@
     cursor: pointer; font-size: 12px; transition: background 0.15s;
   }
   .btn:hover { background: rgba(255,255,255,0.18); }
+  .btn:focus-visible { outline: 2px solid #00c8ff; outline-offset: 2px; }
   .btn.active { background: rgba(0,160,220,0.28); border-color: #00a0dc; color: #00c8ff; }
 
-  /* colour legend: teal→orange ramp */
   #legend {
     position: fixed; bottom: 18px; left: 18px; z-index: 10;
     background: rgba(4,16,30,0.78); border-radius: 8px;
     padding: 10px 14px; font-size: 12px; backdrop-filter: blur(4px);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.08); min-width: 170px;
   }
   #legend h3 { font-size: 11px; color: #7ab0d4; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em; }
-  .ramp {
-    width: 120px; height: 10px; border-radius: 3px;
-    background: linear-gradient(to right, #00d2b4, #0066ff, #ff6600, #ffcc00);
-    margin-bottom: 4px;
-  }
-  .ramp-labels { display: flex; justify-content: space-between; font-size: 10px; color: #7ab0d4; }
+  .bar { height: 8px; border-radius: 4px; }
+  .bar-labels { display: flex; justify-content: space-between; font-size: 11px; color: #7ab0d4; margin-top: 3px; }
 
   #status {
     position: fixed; bottom: 18px; right: 18px; z-index: 10;
     font-size: 12px; color: #7ab0d4; text-align: right; pointer-events: none;
+  }
+  #hint {
+    position: fixed; top: 64px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; color: rgba(200,220,240,0.6); pointer-events: none;
+    z-index: 10; white-space: nowrap;
   }
 </style>
 </head>
@@ -63,252 +64,75 @@
     <button class="btn" id="btnReset">Reset view</button>
   </div>
 </div>
-
+<div id="hint">Drag to rotate · Scroll to zoom</div>
 <div id="legend">
-  <h3>Current speed</h3>
-  <div class="ramp"></div>
-  <div class="ramp-labels"><span>slow</span><span>fast</span></div>
+  <h3>Current speed (annual mean, 5 m depth)</h3>
+  <div class="bar" id="bar"></div>
+  <div class="bar-labels"><span>0</span><span id="barMax">— m/s</span></div>
 </div>
-<div id="status">0 particles</div>
-<canvas id="c"></canvas>
+<div id="status"></div>
+<canvas id="c" aria-label="Globe with animated trails of the annual-mean ocean surface currents"></canvas>
 
 <!-- Plain (non-module) scripts so the page also works when opened directly from disk (file://) -->
 <script src="three.global.min.js"></script>
+<script src="blue_marble.js"></script>
+<script src="flow_globe.js"></script>
 <script src="../data/currents.js"></script>
 <script>
 const DATA_URL = '../data/currents.json';
+const { loadData, createGlobe, createFlowLayer, PALETTES } = FlowGlobe;
 
-// Data comes from ../data/currents.js (works from file://) or, failing that, currents.json over HTTP.
-function loadData(globalName, url) {
-  if (window[globalName]) return Promise.resolve(window[globalName]);
-  if (location.protocol === 'file:') return Promise.reject(new Error('no data yet: run python/04_process_to_json.py'));
-  return fetch(url).then(r => {
-    if (!r.ok) throw new Error(`no data yet (HTTP ${r.status}): run python/04_process_to_json.py`);
-    return r.json();
-  });
-}
-
-// ── scene ─────────────────────────────────────────────────────────────────
-const canvas   = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-const scene  = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-camera.position.set(0, 0, 2.6);
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.35));
-const sun = new THREE.DirectionalLight(0xaaddff, 0.9);
-sun.position.set(4, 2, 2);
-scene.add(sun);
-
-// ── globe — deep ocean colour ─────────────────────────────────────────────
-const GLOBE_R = 1.0;
-const globe = new THREE.Mesh(
-  new THREE.SphereGeometry(GLOBE_R, 64, 64),
-  new THREE.MeshPhongMaterial({
-    color: 0x1a4a72, emissive: 0x081c30,
-    specular: 0x1a4466, shininess: 30,
-    transparent: true, opacity: 0.97,
-  }),
-);
-scene.add(globe);
-
-// atmosphere ring
-scene.add(new THREE.Mesh(
-  new THREE.SphereGeometry(GLOBE_R * 1.03, 32, 32),
-  new THREE.MeshBasicMaterial({ color: 0x002255, transparent: true, opacity: 0.05, side: THREE.BackSide }),
-));
-
-// ── drag ─────────────────────────────────────────────────────────────────
-const rot = { x: 0.3, y: 0 };
-let isDragging = false, lastX = 0, lastY = 0;
-canvas.addEventListener('mousedown',  e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
-canvas.addEventListener('mousemove',  e => {
-  if (!isDragging) return;
-  rot.y += (e.clientX - lastX) * 0.005;
-  rot.x  = Math.max(-1.4, Math.min(1.4, rot.x + (e.clientY - lastY) * 0.005));
-  lastX = e.clientX; lastY = e.clientY;
+const globe = createGlobe({
+  canvas: document.getElementById('c'),
+  textureUrl: window.BLUE_MARBLE_DATA_URL,
+  view: { lat: 25, lon: -55 },               // start over the Gulf Stream
 });
-window.addEventListener('mouseup', () => isDragging = false);
-canvas.addEventListener('touchstart', e => { isDragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; e.preventDefault(); }, { passive: false });
-canvas.addEventListener('touchmove',  e => {
-  if (!isDragging) return;
-  rot.y += (e.touches[0].clientX - lastX) * 0.005;
-  rot.x  = Math.max(-1.4, Math.min(1.4, rot.x + (e.touches[0].clientY - lastY) * 0.005));
-  lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-  e.preventDefault();
-}, { passive: false });
-window.addEventListener('touchend', () => isDragging = false);
-canvas.addEventListener('wheel', e => {
-  camera.position.z = Math.max(1.4, Math.min(5.0, camera.position.z + e.deltaY * 0.002));
-  e.preventDefault();
-}, { passive: false });
 
-function resize() {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-}
-window.addEventListener('resize', resize);
-resize();
+let layer = null, animating = true, speedScale = 1;
+const $ = id => document.getElementById(id);
 
-// ── particles ─────────────────────────────────────────────────────────────
-const NLAT = 181, NLON = 360;
-let N_PARTICLES = 500;
-let uField, vField, speedMax;
-let positions, ages, maxAge;
-let pGeo, pMat, pMesh;
-let animating = true, speedScale = 1.0;
-
-function llToXYZ(lat, lon, r) {
-  const phi   = (90 - lat) * Math.PI / 180;
-  const theta = lon        * Math.PI / 180;
-  return new THREE.Vector3(
-    r * Math.sin(phi) * Math.cos(theta),
-    r * Math.cos(phi),
-    r * Math.sin(phi) * Math.sin(theta),
-  );
-}
-
-function sampleField(lat, lon) {
-  const latIdx = (lat + 90)  / 180 * (NLAT - 1);
-  const lonIdx = ((lon % 360 + 360) % 360) / 359 * (NLON - 1);
-  const li = Math.floor(latIdx), lf = latIdx - li;
-  const lo = Math.floor(lonIdx), lof = lonIdx - lo;
-  const li1 = Math.min(li + 1, NLAT - 1);
-  const lo1 = (lo + 1) % NLON;
-  const idx = r => c => r * NLON + c;
-  const u = (1-lf)*(1-lof)*uField[idx(li)(lo)]  + (1-lf)*lof*uField[idx(li)(lo1)] +
-              lf*(1-lof)*uField[idx(li1)(lo)] + lf*lof*uField[idx(li1)(lo1)];
-  const v = (1-lf)*(1-lof)*vField[idx(li)(lo)]  + (1-lf)*lof*vField[idx(li)(lo1)] +
-              lf*(1-lof)*vField[idx(li1)(lo)] + lf*lof*vField[idx(li1)(lo1)];
-  return [u, v];
-}
-
-function randomParticle(i) {
-  // Start only in ocean-ish regions: seed randomly, discard if zero speed after first step
-  const phi   = Math.acos(2 * Math.random() - 1);
-  const theta = Math.random() * 2 * Math.PI;
-  positions[i*3]   = 90  - phi   * 180 / Math.PI;
-  positions[i*3+1] = theta * 180 / Math.PI;
-  ages[i] = Math.random() * maxAge;
-}
-
-function buildParticles() {
-  if (pMesh) scene.remove(pMesh);
-  positions = new Float32Array(N_PARTICLES * 3);
-  ages      = new Float32Array(N_PARTICLES);
-  maxAge    = 160;
-  for (let i = 0; i < N_PARTICLES; i++) randomParticle(i);
-
-  const posArr = new Float32Array(N_PARTICLES * 3);
-  const colArr = new Float32Array(N_PARTICLES * 3);
-  for (let i = 0; i < N_PARTICLES; i++) {
-    const p = llToXYZ(positions[i*3], positions[i*3+1], GLOBE_R + 0.001);
-    posArr[i*3] = p.x; posArr[i*3+1] = p.y; posArr[i*3+2] = p.z;
-    colArr[i*3] = 0; colArr[i*3+1] = 0.82; colArr[i*3+2] = 0.7;
-  }
-  pGeo = new THREE.BufferGeometry();
-  pGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-  pGeo.setAttribute('color',    new THREE.BufferAttribute(colArr, 3));
-  pMat  = new THREE.PointsMaterial({ size: 0.0065, vertexColors: true, transparent: true, opacity: 0.9, sizeAttenuation: true });
-  pMesh = new THREE.Points(pGeo, pMat);
-  scene.add(pMesh);
-  document.getElementById('status').textContent = `${N_PARTICLES} particles`;
-}
-
-// colour map: slow (teal) → medium (blue) → fast (orange) → peak (yellow)
-const COLOUR_STOPS = [
-  { t: 0.0,  r: 0.00, g: 0.82, b: 0.70 },
-  { t: 0.33, r: 0.00, g: 0.40, b: 1.00 },
-  { t: 0.66, r: 1.00, g: 0.40, b: 0.00 },
-  { t: 1.0,  r: 1.00, g: 0.80, b: 0.00 },
-];
-function speedColor(spd) {
-  const t = Math.min(1, spd / (speedMax * 0.7));
-  let lo = COLOUR_STOPS[0], hi = COLOUR_STOPS[COLOUR_STOPS.length - 1];
-  for (let j = 0; j < COLOUR_STOPS.length - 1; j++) {
-    if (t >= COLOUR_STOPS[j].t && t <= COLOUR_STOPS[j+1].t) { lo = COLOUR_STOPS[j]; hi = COLOUR_STOPS[j+1]; break; }
-  }
-  const a = (t - lo.t) / Math.max(1e-6, hi.t - lo.t);
-  return { r: lo.r + a*(hi.r-lo.r), g: lo.g + a*(hi.g-lo.g), b: lo.b + a*(hi.b-lo.b) };
-}
-
-const DT = 0.12;
-function stepParticles() {
-  const posAttr = pGeo.getAttribute('position');
-  const colAttr = pGeo.getAttribute('color');
-  for (let i = 0; i < N_PARTICLES; i++) {
-    ages[i]++;
-    if (ages[i] > maxAge) randomParticle(i);
-
-    let lat = positions[i*3];
-    let lon = positions[i*3+1];
-    const [u, v] = sampleField(lat, lon);
-    const spd = Math.sqrt(u*u + v*v);
-
-    // Skip land cells (zero speed) — reseed
-    if (spd < 0.001 && ages[i] > 5) { ages[i] = maxAge + 1; continue; }
-
-    const cosLat = Math.cos(lat * Math.PI / 180);
-    const dLat   = v * DT * speedScale;
-    const dLon   = cosLat > 0.02 ? u * DT * speedScale / cosLat : 0;
-
-    lat += dLat;
-    lon  = (lon + dLon + 360) % 360;
-    if (lat > 90 || lat < -90) { ages[i] = maxAge + 1; continue; }
-
-    positions[i*3]   = lat;
-    positions[i*3+1] = lon;
-
-    const p = llToXYZ(lat, lon, GLOBE_R + 0.0015);
-    posAttr.setXYZ(i, p.x, p.y, p.z);
-
-    const fade = 1 - ages[i] / maxAge;
-    const c    = speedColor(spd);
-    colAttr.setXYZ(i, c.r * fade, c.g * fade, c.b * fade);
-  }
-  posAttr.needsUpdate = true;
-  colAttr.needsUpdate = true;
-}
-
-// ── data load ─────────────────────────────────────────────────────────────
-document.getElementById('meta').textContent = 'Fetching current data…';
 loadData('CURRENT_DATA', DATA_URL)
   .then(data => {
-    uField   = data.uField;
-    vField   = data.vField;
-    speedMax = data.speedMax;
-    document.getElementById('meta').textContent =
-      `${data.source} ${data.year} · ${data.grid.nlat}×${data.grid.nlon} grid · max ${speedMax.toFixed(2)} m/s`;
-    buildParticles();
+    // Ocean currents are 10–100× slower than winds (typically 0.05–1 m/s).
+    // The step grows with √speed, so slow gyre currents still leave visible
+    // streaks while the colour shows the true speed.
+    layer = createFlowLayer(globe, data, {
+      count: 4000,
+      trail: 20,
+      degPerMs: 0.8,      // step = 0.8° × √(speed in m/s): 0.1 m/s → 0.25°, 0.5 m/s → 0.57°
+      speedExponent: 0.5,
+      maxStep: 0.7,       // cap so the Gulf Stream and Agulhas do not streak
+      radius: 1.003,
+      palette: PALETTES.current,
+      colourMax: data.speedMax * 0.6,
+      colourGamma: 0.5,   // square-root scale: spreads out the many slow currents
+      minSpeed: 0.02,     // only place particles where the current is ≥ 2 cm/s (= ocean)
+      opacity: 1.0,
+    });
+    $('meta').textContent =
+      `${data.source} ${data.year} annual mean · ${data.grid.nlat}×${data.grid.nlon} grid · max ${data.speedMax.toFixed(2)} m/s`;
+    $('bar').style.background = layer.legendCss;
+    $('barMax').textContent = `${(data.speedMax * 0.6).toFixed(1)}+ m/s`;
+    $('status').textContent = `${layer.count} particles`;
   })
   .catch(err => {
-    document.getElementById('meta').textContent = `Error: ${err.message}`;
+    $('meta').textContent = `Error: ${err.message}`;
     console.error(err);
   });
 
-function animate() {
-  requestAnimationFrame(animate);
-  globe.rotation.x = rot.x; globe.rotation.y = rot.y;
-  if (pMesh) { pMesh.rotation.x = rot.x; pMesh.rotation.y = rot.y; }
-  if (animating && pMesh && uField) stepParticles();
-  renderer.render(scene, camera);
-}
+globe.onFrame(() => { if (layer && animating) layer.step(speedScale); });
 
 // ── controls ──────────────────────────────────────────────────────────────
-document.getElementById('btnPlay').addEventListener('click', function() {
+$('btnPlay').addEventListener('click', function () {
   animating = !animating;
   this.textContent = animating ? 'Pause' : 'Play';
   this.classList.toggle('active', animating);
 });
-document.getElementById('btnFaster').addEventListener('click', () => { speedScale = Math.min(4, speedScale * 1.4); });
-document.getElementById('btnSlower').addEventListener('click', () => { speedScale = Math.max(0.1, speedScale / 1.4); });
-document.getElementById('btnMore').addEventListener('click', () => { N_PARTICLES = Math.min(3000, N_PARTICLES + 100); buildParticles(); });
-document.getElementById('btnFewer').addEventListener('click', () => { N_PARTICLES = Math.max(50, N_PARTICLES - 100); buildParticles(); });
-document.getElementById('btnReset').addEventListener('click', () => { rot.x = 0.3; rot.y = 0; camera.position.z = 2.6; });
-animate();
+$('btnFaster').addEventListener('click', () => { speedScale = Math.min(4, speedScale * 1.4); });
+$('btnSlower').addEventListener('click', () => { speedScale = Math.max(0.1, speedScale / 1.4); });
+$('btnMore').addEventListener('click', () => { if (layer) { layer.setCount(layer.count + 1000); $('status').textContent = `${layer.count} particles`; } });
+$('btnFewer').addEventListener('click', () => { if (layer) { layer.setCount(layer.count - 1000); $('status').textContent = `${layer.count} particles`; } });
+$('btnReset').addEventListener('click', () => globe.resetView());
 </script>
 </body>
 </html>

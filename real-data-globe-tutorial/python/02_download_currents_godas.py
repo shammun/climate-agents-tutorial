@@ -5,8 +5,8 @@ Download GODAS (Global Ocean Data Assimilation System) ocean current
 velocity components from NOAA PSL.  NO API KEY REQUIRED.
 
 GODAS variables:
-  ucur  — eastward ocean current velocity (cm/s)
-  vcur  — northward ocean current velocity (cm/s)
+  ucur  — eastward ocean current velocity (m/s in current files; check the units attribute)
+  vcur  — northward ocean current velocity (m/s in current files)
   Dimensions: (time=12, level=40, lat=418, lon=360)
   Level coordinate: depth in metres (0.5 m to ~4478 m)
   We will use level index 0 (depth ≈ 5 m) as the surface.

@@ -10,9 +10,9 @@ Unlike the hand-drawn path version in `hero-globe-tutorial/`, every particle her
 
 | File | What it shows |
 |---|---|
-| `html/01_wind_globe.html` | 800 wind particles advected from ERA5 annual-mean 10 m winds |
-| `html/02_current_globe.html` | 400 ocean current particles from GODAS, speed-coloured teal→orange |
-| `html/03_combined_globe.html` | Both layers simultaneously with toggle buttons |
+| `html/01_wind_globe.html` | 3000 wind trails from ERA5 or NCEP annual-mean 10 m winds over a Blue Marble Earth |
+| `html/02_current_globe.html` | 4000 ocean current trails from GODAS (5 m depth), coloured by speed |
+| `html/03_combined_globe.html` | Both layers together, with buttons to switch each on and off |
 
 ---
 
@@ -68,7 +68,10 @@ real-data-globe-tutorial/
 ├── html/
 │   ├── 01_wind_globe.html
 │   ├── 02_current_globe.html
-│   └── 03_combined_globe.html
+│   ├── 03_combined_globe.html
+│   ├── flow_globe.js        ← shared globe + particle-trail code
+│   ├── blue_marble.js       ← Earth image embedded as a data URL
+│   └── three.global.min.js  ← Three.js as a plain script
 └── guide/
     └── REAL_DATA_GLOBE_GUIDE.md   ← comprehensive step-by-step walkthrough
 ```

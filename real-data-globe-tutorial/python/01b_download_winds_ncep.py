@@ -2,7 +2,7 @@
 01b_download_winds_ncep.py
 --------------------------
 Fallback wind download — NO API KEY REQUIRED.
-Downloads NCEP/NCAR Reanalysis 1 monthly-mean 10 m wind components from
+Downloads NCEP/NCAR Reanalysis 1 six-hourly 10 m wind components for one year from
 NOAA PSL (Physical Sciences Laboratory) public FTP/HTTP mirror.
 
 Output:  data/ncep_uwnd_<YEAR>.nc   (u-component, m/s)
@@ -35,7 +35,10 @@ YEAR = args.year
 DATA_DIR = pathlib.Path(__file__).parent.parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
-BASE_URL = "https://downloads.psl.noaa.gov/Datasets/ncep.reanalysis.derived/surface_gauss"
+# Yearly files of 6-hourly values live in ncep.reanalysis/ (not .derived/,
+# which only holds multi-year monthly-mean files). 04_process_to_json.py
+# averages over all time steps, so 6-hourly input gives the annual mean.
+BASE_URL = "https://downloads.psl.noaa.gov/Datasets/ncep.reanalysis/surface_gauss"
 FILES = {
     f"ncep_uwnd_{YEAR}.nc": f"uwnd.10m.gauss.{YEAR}.nc",
     f"ncep_vwnd_{YEAR}.nc": f"vwnd.10m.gauss.{YEAR}.nc",
@@ -63,7 +66,7 @@ def download_file(url: str, dest: pathlib.Path) -> None:
     print(f"\n  Done: {dest.stat().st_size / 1e6:.1f} MB")
 
 print(f"\nDownloading NCEP/NCAR 10 m winds for {YEAR} from NOAA PSL...")
-print("No API key required. File sizes ~5 MB each.\n")
+print("No API key required. File sizes ~50 MB each.\n")
 
 for local_name, remote_name in FILES.items():
     url  = f"{BASE_URL}/{remote_name}"
