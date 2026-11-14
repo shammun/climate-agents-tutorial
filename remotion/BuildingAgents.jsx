@@ -1,0 +1,46 @@
+/**
+ * BuildingAgents: 65-second how-to explainer (1950 frames @ 30 fps, 1280x720).
+ * Eight scenes in a Series; each scene uses its own local frame counter.
+ */
+import { AbsoluteFill, Series, Audio, staticFile } from 'remotion';
+import { IntroScene } from './scenes2/IntroScene.jsx';
+import { LoopScene } from './scenes2/LoopScene.jsx';
+import { FilesScene } from './scenes2/FilesScene.jsx';
+import { CodeScene } from './scenes2/CodeScene.jsx';
+import { SkillsScene } from './scenes2/SkillsScene.jsx';
+import { SubagentScene } from './scenes2/SubagentScene.jsx';
+import { PipelineScene } from './scenes2/PipelineScene.jsx';
+import { CTA2Scene } from './scenes2/CTA2Scene.jsx';
+
+export const BuildingAgents = () => (
+  <AbsoluteFill style={{ background: '#060916', fontFamily: "Inter, system-ui, 'Segoe UI', sans-serif" }}>
+    {/* The ambient track is 32 s long, so it loops to cover the 65 s video */}
+    <Audio src={staticFile('ambient.mp3')} volume={0.7} loop />
+    <Series>
+      <Series.Sequence durationInFrames={240}>{/* 0–240 */}
+        <IntroScene />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={270}>{/* 240–510 */}
+        <LoopScene />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={240}>{/* 510–750 */}
+        <FilesScene />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={270}>{/* 750–1020 */}
+        <CodeScene />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={210}>{/* 1020–1230 */}
+        <SkillsScene />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={270}>{/* 1230–1500 */}
+        <SubagentScene />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={270}>{/* 1500–1770 */}
+        <PipelineScene />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={180}>{/* 1770–1950 */}
+        <CTA2Scene />
+      </Series.Sequence>
+    </Series>
+  </AbsoluteFill>
+);
